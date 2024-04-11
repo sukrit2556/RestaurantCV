@@ -7,16 +7,17 @@ import threading
 
 frame_count = 0
 frame_rate = 0
+stop_thread = False
+list_total_count = []
+list_realtime_count_cache = []
 
 #### Initialize the color randomizer for detected box ####
 detection_colors, class_list = color_selector()
 
 def calculate_real_people_total():
-    global list_realtime_count_cache, list_total_count, stop_thread
     while not stop_thread:
-        list_total_count = list_realtime_count_cache
         print("frame__count", frame_count)
-        print("list_total_count", list_total_count)
+        print("list_total_count", list_realtime_count_cache)
         time.sleep(1)
 
 def now_frame_rate():
@@ -137,9 +138,9 @@ while True:
         
         # Display the resulting frame
         cv2.imshow("ObjectDetection", frame)
-        list_realtime_count_cache = list_realtime_count
-        print("realtime_count = ", list_realtime_count_cache)
+        list_realtime_count_cache = list_realtime_count.copy()
         reset_people_count()
+        print("realtime_count = ", list_realtime_count_cache)
 
         # Terminate run when "Q" pressed
         if cv2.waitKey(1) == ord("q"):

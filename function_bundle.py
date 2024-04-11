@@ -8,10 +8,7 @@ import datetime
 font = cv2.FONT_HERSHEY_COMPLEX
 
 table_points = []
-stop_thread = False
-list_total_count = []
 list_realtime_count = []
-list_realtime_count_cache = []
 
 
 
