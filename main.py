@@ -10,15 +10,37 @@ frame_rate = 0
 stop_thread = False
 list_total_count = []
 list_realtime_count_cache = []
+availability = []
 
 #### Initialize the color randomizer for detected box ####
 detection_colors, class_list = color_selector()
 
+####################### THREADING PROCESS {BEGIN} #######################
 def calculate_real_people_total():
+    global list_total_count
     while not stop_thread:
-        print("frame__count", frame_count)
-        print("list_total_count", list_realtime_count_cache)
-        time.sleep(1)
+        list_total_count = list_realtime_count_cache.copy()
+        time.sleep(5)
+
+def check_available():
+    while not stop_thread:
+        table_status = [] # 3 = occupied , 0 = unoccupied
+        for table_no, _ in enumerate(table_points): #initialize list
+            table_status.append(0)
+        # start checking for 3 sampling time at each tables
+        for i in range (0, 3):
+            list_realtime_count = list_realtime_count_cache.copy()
+            for table_no, _ in enumerate(table_points):
+                if list_realtime_count[table_no] > 0: #occupied detected that moment
+                    table_status[table_no] += 1
+            time.sleep(5)
+
+        # determining the meaning of state
+        for i in table_status:
+            if table_status >= 3:   # occupied
+                availability.append("occupied")
+            else:                   #unoccupied
+                availability.append("Unoccupied")
 
 def now_frame_rate():
     global frame_rate
@@ -32,8 +54,12 @@ def now_frame_rate():
 # Create and start the thread
 thread1 = threading.Thread(target=calculate_real_people_total)
 thread2 = threading.Thread(target=now_frame_rate)
+thread3 = threading.Thread(target=check_available)
 thread1.start()
 thread2.start()
+thread3.start()
+
+####################### THREADING PROCESS {END} #######################
 
 ### load a pretrained YOLOv8n model ###
 model = YOLO("weights/yolov8l.pt", "v8")
@@ -133,6 +159,7 @@ while True:
         text_to_put_list.append(str(len(detect_params[0])) + " " + "person")
         text_to_put_list.append("realtime: " + str(list_realtime_count))
         text_to_put_list.append("total: " + str(list_total_count))
+        text_to_put_list.append(str(availability))
         put_text_bottom_right(frame, text_to_put_list)
 
         
@@ -140,7 +167,6 @@ while True:
         cv2.imshow("ObjectDetection", frame)
         list_realtime_count_cache = list_realtime_count.copy()
         reset_people_count()
-        print("realtime_count = ", list_realtime_count_cache)
 
         # Terminate run when "Q" pressed
         if cv2.waitKey(1) == ord("q"):

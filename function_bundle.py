@@ -115,7 +115,7 @@ def reset_people_count():
       
 def put_text_bottom_right(frame, text_to_put_list):
     start_position_x = 1100
-    start_position_y = 700
+    start_position_y = 650
     for text in text_to_put_list:
         cv2.putText(frame, 
                 text,
@@ -125,7 +125,7 @@ def put_text_bottom_right(frame, text_to_put_list):
                 (0,0,255),  #font color
                 2           #font thickness
         )
-        start_position_y += 20
+        start_position_y += 30
 
 if __name__ == "__main__":
     frame = cv2.imread("SharedScreenshot.jpg")
