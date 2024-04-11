@@ -1,0 +1,27 @@
+source: video_frame
+frame_skip: 1
+
+video_frame:
+  source: video
+  url: "inference/videos/restaurantFull.mp4"
+
+live_frame:
+  source: live_frame
+  url: 0
+
+table_coordinate:
+  pts:
+    - [90, 245]
+    - [318, 145]
+    - [427, 294]
+    - [148, 430]
+  pts1:
+    - [148, 436]
+    - [449, 302]
+    - [660, 566]
+    - [279, 745]
+  pts2:
+    - [986, 136]
+    - [1267, 17]
+    - [1578, 184]
+    - [1370, 370]
