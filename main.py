@@ -10,37 +10,52 @@ frame_rate = 0
 stop_thread = False
 list_total_count = []
 list_realtime_count_cache = []
-availability = []
+availability_cache = []
 
 #### Initialize the color randomizer for detected box ####
 detection_colors, class_list = color_selector()
 
 ####################### THREADING PROCESS {BEGIN} #######################
 def calculate_real_people_total():
-    global list_total_count
+    global list_total_count, stop_thread
     while not stop_thread:
         list_total_count = list_realtime_count_cache.copy()
         time.sleep(5)
 
 def check_available():
+    global list_realtime_count_cache, stop_thread, availability_cache
     while not stop_thread:
         table_status = [] # 3 = occupied , 0 = unoccupied
-        for table_no, _ in enumerate(table_points): #initialize list
-            table_status.append(0)
-        # start checking for 3 sampling time at each tables
-        for i in range (0, 3):
-            list_realtime_count = list_realtime_count_cache.copy()
-            for table_no, _ in enumerate(table_points):
-                if list_realtime_count[table_no] > 0: #occupied detected that moment
-                    table_status[table_no] += 1
-            time.sleep(5)
+        availability = []
+        try:
+            for table_no, _ in enumerate(table_points): #initialize list
+                table_status.append(0)
+            # start checking for 3 sampling time at each tables
+            for i in range (0, 3):
+                print("check available ====================================================", i)
+                list_realtime_count = list_realtime_count_cache.copy()
+                for table_no, _ in enumerate(table_points):
+                    if list_realtime_count[table_no] > 0: #occupied detected that moment
+                        table_status[table_no] += 1
+                time.sleep(1)
 
-        # determining the meaning of state
-        for i in table_status:
-            if table_status >= 3:   # occupied
-                availability.append("occupied")
-            else:                   #unoccupied
-                availability.append("Unoccupied")
+            print("Table_status_Table_status_Table_status_Table_status_Table_status_Table_status_")
+            print("table_status", table_status)
+
+            # determining the meaning of state
+
+            print("Sukrit songserm")
+            for item in table_status:
+                print("fuck", i)
+                if item >= 3:   # occupied
+                    availability.append("occupied")
+                else:                   #unoccupied
+                    availability.append("Unoccupied")
+            print("AVAILABILITYAVAILABILITYAVAILABILITYAVAILABILITYAVAILABILITYAVAILABILITYAVAILABILITYAVAILABILITY")
+            print(availability)
+            availability_cache = availability.copy()
+        except:
+            pass
 
 def now_frame_rate():
     global frame_rate
@@ -52,6 +67,8 @@ def now_frame_rate():
         frame_rate = (frame_count_after - frame_count_before)/second
 
 # Create and start the thread
+run_event = threading.Event()
+run_event.set()
 thread1 = threading.Thread(target=calculate_real_people_total)
 thread2 = threading.Thread(target=now_frame_rate)
 thread3 = threading.Thread(target=check_available)
@@ -159,9 +176,9 @@ while True:
         text_to_put_list.append(str(len(detect_params[0])) + " " + "person")
         text_to_put_list.append("realtime: " + str(list_realtime_count))
         text_to_put_list.append("total: " + str(list_total_count))
-        text_to_put_list.append(str(availability))
+        text_to_put_list.append(str(availability_cache))
         put_text_bottom_right(frame, text_to_put_list)
-
+        print("available: ", availability_cache)
         
         # Display the resulting frame
         cv2.imshow("ObjectDetection", frame)
@@ -171,7 +188,10 @@ while True:
         # Terminate run when "Q" pressed
         if cv2.waitKey(1) == ord("q"):
             break
+
 thread1.join()
+thread2.join()
+thread3.join()
 # When everything done, release the capture
 cap.release()
 cv2.destroyAllWindows()
