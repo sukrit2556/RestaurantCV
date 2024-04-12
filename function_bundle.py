@@ -19,7 +19,7 @@ with open('myconfig.yaml', 'r') as file:
 
 # Access the points from the config dictionary
 for key, value in config["table_coordinate"].items():
-    #print(value)
+    print(value)
     table_points.append(value)
 
 # Convert lists to numpy arrays
@@ -45,7 +45,7 @@ def color_selector():
 
     return detection_colors, class_list
 
-def draw_table_point(frame, list_point_all_table = table_points):
+def draw_table_point(frame, availability_cache, list_point_all_table = table_points):
     ## draw and put text for each table
     for table_no, pts in enumerate(list_point_all_table):
         cv2.polylines(frame, [pts], isClosed=True, color=(0, 255, 0), thickness=2)
@@ -70,8 +70,16 @@ def draw_table_point(frame, list_point_all_table = table_points):
                     2           #font thickness
         )
         cv2.putText(frame, 
-                    "status: " + str("Unoccupied" if list_realtime_count[table_no] == 0 else "occupied"),
+                    "realtime_status: " + str("Unoccupied" if list_realtime_count[table_no] == 0 else "occupied"),
                     (x_coord,y_coord+40),
+                    font,       #font name
+                    1,          #font scale
+                    (0,0,255),  #font color
+                    2           #font thickness
+        )
+        cv2.putText(frame, 
+                    "Real_status: " + (str(availability_cache[table_no]) if len(availability_cache) > 0 else ""),
+                    (x_coord,y_coord+60),
                     font,       #font name
                     1,          #font scale
                     (0,0,255),  #font color

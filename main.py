@@ -2,7 +2,6 @@ import cv2
 import numpy as np
 from ultralytics import YOLO
 from function_bundle import *
-import yaml
 import threading
 
 frame_count = 0
@@ -31,13 +30,13 @@ def check_available():
             for table_no, _ in enumerate(table_points): #initialize list
                 table_status.append(0)
             # start checking for 3 sampling time at each tables
-            for i in range (0, 3):
+            for i in range (0, 5):
                 print("check available ====================================================", i)
                 list_realtime_count = list_realtime_count_cache.copy()
                 for table_no, _ in enumerate(table_points):
                     if list_realtime_count[table_no] > 0: #occupied detected that moment
                         table_status[table_no] += 1
-                time.sleep(1)
+                time.sleep(3)
 
             print("Table_status_Table_status_Table_status_Table_status_Table_status_Table_status_")
             print("table_status", table_status)
@@ -47,7 +46,7 @@ def check_available():
             print("Sukrit songserm")
             for item in table_status:
                 print("fuck", i)
-                if item >= 3:   # occupied
+                if item >= 5/2:   # occupied
                     availability.append("occupied")
                 else:                   #unoccupied
                     availability.append("Unoccupied")
@@ -168,7 +167,7 @@ while True:
                     pass
         
         ### draw table area ###
-        draw_table_point(frame)
+        draw_table_point(frame, availability_cache)
         
         # put text on the bottom right bottom
         text_to_put_list = []
@@ -184,6 +183,9 @@ while True:
         cv2.imshow("ObjectDetection", frame)
         list_realtime_count_cache = list_realtime_count.copy()
         reset_people_count()
+
+        if frame_count == 5:
+            cv2.imwrite("restaurantwithplot.jpg", frame)
 
         # Terminate run when "Q" pressed
         if cv2.waitKey(1) == ord("q"):
