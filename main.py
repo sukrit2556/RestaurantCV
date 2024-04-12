@@ -43,13 +43,11 @@ def check_available():
 
             # determining the meaning of state
 
-            print("Sukrit songserm")
             for item in table_status:
-                print("fuck", i)
                 if item >= 5/2:   # occupied
                     availability.append("occupied")
                 else:                   #unoccupied
-                    availability.append("Unoccupied")
+                    availability.append("unoccupied")
             print("AVAILABILITYAVAILABILITYAVAILABILITYAVAILABILITYAVAILABILITYAVAILABILITYAVAILABILITYAVAILABILITY")
             print(availability)
             availability_cache = availability.copy()
