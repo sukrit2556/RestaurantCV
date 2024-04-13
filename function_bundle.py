@@ -5,6 +5,15 @@ import numpy as np
 import time
 import datetime
 
+import mysql.connector
+
+mydb = mysql.connector.connect(
+  host="127.0.0.1",
+  user="root",
+  password="",
+  database="restaurant"
+)
+
 font = cv2.FONT_HERSHEY_COMPLEX
 
 table_points = []
@@ -122,7 +131,7 @@ def reset_people_count():
         list_realtime_count[i] = 0
       
 def put_text_bottom_right(frame, text_to_put_list):
-    start_position_x = 1100
+    start_position_x = 500
     start_position_y = 650
     for text in text_to_put_list:
         cv2.putText(frame, 
@@ -135,17 +144,24 @@ def put_text_bottom_right(frame, text_to_put_list):
         )
         start_position_y += 30
 
+def insert_db(table_name, field_list, value_list):
+    mycursor = mydb.cursor()
+
+    table_name = table_name
+
+    # Construct placeholders for values
+    field_placeholders = ', '.join(['%s' for _ in field_list])
+
+    # Construct the SQL query
+    sql = f"INSERT INTO {table_name} ({', '.join(field_list)}) VALUES ({field_placeholders})"
+
+    # Execute the query
+    mycursor.execute(sql, value_list)
+
+    # Commit the transaction
+    mydb.commit()
+
+    print(mycursor.rowcount, "record inserted.")
+
 if __name__ == "__main__":
-    frame = cv2.imread("SharedScreenshot.jpg")
-    list_point = [[[90, 245], [318, 145], [427, 294], [148, 430]],
-                  [[148, 436], [449, 302], [660, 566], [279, 745]],
-                  [[986, 136], [1267, 17], [1578, 184], [1370, 370]]]
-    list_point = np.array(list_point, dtype=np.int32)
-    frame = draw_table_point(frame, list_point)
-    show_time(frame)
-
-    #cv2.imshow("Frame with table label", frame)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-
-    count_table_people(100,200)
+    insert_db("test", ["name", "address", "text1", "text2", "text3"], ["John", "Highway21", "fuck", "dsd", "ssss"])

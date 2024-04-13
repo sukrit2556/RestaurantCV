@@ -3,7 +3,7 @@ frame_skip: 1
 
 video_frame:
   source: video
-  url: "inference/videos/occupied_test_full.mp4"
+  url: "inference/videos/restaurantFull.mp4"
 
 live_frame:
   source: live_frame
@@ -25,15 +25,15 @@ table_coordinate:
   pts3:
     - [472, 0]
     - [709, 0]
-    - [709, 80]
-    - [550, 138]
-    - [472, 90]
+    - [709, 60]
+    - [550, 115]
+    - [472, 73]
   pts4:
     - [710, 0]
     - [1040, 0]
     - [1040, 108]
-    - [846, 176]
-    - [710, 100]
+    - [876, 163]
+    - [710, 60]
   pts5:
     - [986, 136]
     - [1267, 17]
@@ -43,6 +43,6 @@ table_coordinate:
   pts6:
     - [1685, 220]
     - [1920, 321]
-    - [1920, 666]
-    - [1727, 565]
-    - [1530, 456]
+    - [1920, 530]
+    - [1739, 440]
+    - [1596, 355]
