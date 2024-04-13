@@ -3,11 +3,13 @@ import numpy as np
 from ultralytics import YOLO
 from function_bundle import *
 import threading
+import statistics
 
 frame_count = 0
 frame_rate = 0
 stop_thread = False
-list_total_count = []
+check_available_started = False
+list_total_count_cache = []
 list_realtime_count_cache = []
 availability_cache = []
 
@@ -16,13 +18,56 @@ detection_colors, class_list = color_selector()
 
 ####################### THREADING PROCESS {BEGIN} #######################
 def calculate_real_people_total():
-    global list_total_count, stop_thread
+    global list_total_count_cache, stop_thread
+    #initialize sampling list
+    sampling_from_each_table = []
+    for _ in range (len(table_points)):
+        sampling_from_each_table.append([])
+
     while not stop_thread:
-        list_total_count = list_realtime_count_cache.copy()
-        time.sleep(5)
+        if check_available_started:
+            print("________________-Get in calculate now")
+            list_total_count = list_realtime_count_cache.copy()
+            
+            print("sampling_from_each_table", sampling_from_each_table)
+
+            # operating
+            for i in range (len(table_points)):
+
+                print(i)
+            
+                # if occupied then keep collecting until it reaches 100 collection
+                if availability_cache[i] == "occupied" and len(sampling_from_each_table[i]) < 100:
+                    realtime_count_that_table = list_total_count[i]
+                    sampling_from_each_table[i].append(realtime_count_that_table)
+
+                elif availability_cache[i] == "unoccupied": #if become unoccupied then reset
+                    sampling_from_each_table[i] = []
+                    
+                
+            print("helloooooooooooooooooooooooooooooooooooooooooooooooooooo")
+            print(sampling_from_each_table)
+
+            # determine the meaning
+            for i in range (len(table_points)):
+                if len(sampling_from_each_table[i]) > 0: # have sampling data
+                    list_total_count[i] = statistics.mode(sampling_from_each_table[i])
+                    if len(sampling_from_each_table[i]) >= 100:
+                        # add to database
+                        pass
+                else: # have no sampling data
+                    list_total_count[i] = 0
+            list_total_count_cache = list_total_count.copy()
+
+            time.sleep(2)
+        else:
+            pass
+
+
+
 
 def check_available():
-    global list_realtime_count_cache, stop_thread, availability_cache
+    global list_realtime_count_cache, stop_thread, availability_cache, check_available_started
     while not stop_thread:
         table_status = [] # 3 = occupied , 0 = unoccupied
         availability = []
@@ -38,7 +83,6 @@ def check_available():
                         table_status[table_no] += 1
                 time.sleep(3)
 
-            print("Table_status_Table_status_Table_status_Table_status_Table_status_Table_status_")
             print("table_status", table_status)
 
             # determining the meaning of state
@@ -48,9 +92,10 @@ def check_available():
                     availability.append("occupied")
                 else:                   #unoccupied
                     availability.append("unoccupied")
-            print("AVAILABILITYAVAILABILITYAVAILABILITYAVAILABILITYAVAILABILITYAVAILABILITYAVAILABILITYAVAILABILITY")
             print(availability)
             availability_cache = availability.copy()
+            if check_available_started == False:
+                check_available_started = True
         except:
             pass
 
@@ -69,9 +114,6 @@ run_event.set()
 thread1 = threading.Thread(target=calculate_real_people_total)
 thread2 = threading.Thread(target=now_frame_rate)
 thread3 = threading.Thread(target=check_available)
-thread1.start()
-thread2.start()
-thread3.start()
 
 ####################### THREADING PROCESS {END} #######################
 
@@ -100,7 +142,8 @@ if not cap.isOpened():
 ### Amount of frame skipped ####
 frame_skipped = config['frame_skip']
 
-while True:
+
+while True and not stop_thread:
     # Capture frame-by-frame
     ret, frame = cap.read() # if frame is read correctly ret is True
     
@@ -172,18 +215,21 @@ while True:
         text_to_put_list.append("frame " + str(frame_count) + " " + str(frame_rate) + " Frame/s")
         text_to_put_list.append(str(len(detect_params[0])) + " " + "person")
         text_to_put_list.append("realtime: " + str(list_realtime_count))
-        text_to_put_list.append("total: " + str(list_total_count))
+        text_to_put_list.append("total: " + str(list_total_count_cache))
         text_to_put_list.append(str(availability_cache))
         put_text_bottom_right(frame, text_to_put_list)
         print("available: ", availability_cache)
         
+
         # Display the resulting frame
         cv2.imshow("ObjectDetection", frame)
         list_realtime_count_cache = list_realtime_count.copy()
         reset_people_count()
 
-        if frame_count == 5:
-            cv2.imwrite("restaurantwithplot.jpg", frame)
+        if frame_count == 1:
+            thread1.start()
+            thread2.start()
+            thread3.start()
 
         # Terminate run when "Q" pressed
         if cv2.waitKey(1) == ord("q"):
