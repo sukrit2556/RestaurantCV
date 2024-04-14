@@ -4,6 +4,7 @@ import yaml
 import numpy as np
 import time
 import datetime
+from datetime import datetime
 
 import mysql.connector
 
@@ -19,7 +20,23 @@ font = cv2.FONT_HERSHEY_COMPLEX
 table_points = []
 list_realtime_count = []
 
-
+class videoQueue:
+    def __init__(self):
+        self.frame_queue = []
+        
+    def add_frame(self, frame):
+        self.frame_queue.append(frame)
+        
+    def get_frame(self):
+        if len(self.frame_queue) > 0:
+            return self.frame_queue.pop(0)
+        return None
+    
+    def is_empty(self):
+        if len(self.frame_queue) == 0:
+            return True
+        else:
+            return False
 
 ######### Initialize the table point [START] #########
 with open('myconfig.yaml', 'r') as file:

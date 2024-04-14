@@ -3,7 +3,7 @@ frame_skip: 1
 
 video_frame:
   source: video
-  url: "inference/videos/restaurantFull.mp4"
+  url: "inference/videos/occupied_test_full.mp4"
 
 live_frame:
   source: live_frame

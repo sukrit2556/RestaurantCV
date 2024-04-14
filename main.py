@@ -12,6 +12,7 @@ check_available_started = False
 list_total_count_cache = []
 list_realtime_count_cache = []
 availability_cache = []
+end_recording = False
 
 #### Initialize the color randomizer for detected box ####
 detection_colors, class_list = color_selector()
@@ -97,7 +98,10 @@ def check_available():
             for i, item in enumerate(table_status):
                 if item >= 5/2:   # occupied
                     availability.append("occupied")
-                    
+                    if len(availability_cache) == 0 or availability_cache[i] == "unoccupied":
+                        field_list = ["tableID", "customer_IN"]
+                        value_list = [i+1, datetime.now()]
+                        insert_db(table_name, field_list, value_list)
                 else:                   #unoccupied
                     availability.append("unoccupied")
             print(availability)
@@ -118,13 +122,48 @@ def now_frame_rate():
         frame_count_after = frame_count
         frame_rate = int((frame_count_after - frame_count_before)/second)
 
+def combine_frame():
+    completed_frames = None
+    global stop_thread
+    # Define video resolution and frame rate
+    frame_width = 1920
+    frame_height = 1080
+    fps = 30
+
+    size = (frame_width, frame_height) 
+    # Define codec and create VideoWriter object
+    out = cv2.VideoWriter('result_video/TestOccupied.avi', 
+						cv2.VideoWriter_fourcc(*'MJPG'), 
+						15, size) 
+
+    while not stop_thread and not end_recording:
+        print("COMBINE FRAME IS STILL WORKING FINE")
+        # Iterate over each video queue to check for frames
+        if completed_frames is None:  # Check if frame for this index is not yet filled
+            frame = object1.get_frame()  # Get frame from video queue
+            
+            if frame is not None:  # If frame is available, update completed_frames
+                completed_frames = frame
+                
+        if frame is not None:
+            print(completed_frames)
+            completed_frames = cv2.resize(completed_frames, (1920,1080))
+            out.write(completed_frames)
+            # Display the combined frame
+            #cv2.imshow('completed_frames', completed_frames)
+            completed_frames = None
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+        #time.sleep(0.1)
+    out.release()
+
 # Create and start the thread
 run_event = threading.Event()
 run_event.set()
 thread1 = threading.Thread(target=calculate_real_people_total)
 thread2 = threading.Thread(target=now_frame_rate)
 thread3 = threading.Thread(target=check_available)
-
+thread4 = threading.Thread(target=combine_frame)
 ####################### THREADING PROCESS {END} #######################
 
 ### load a pretrained YOLOv8n model ###
@@ -158,8 +197,8 @@ fps = 30
 size = (frame_width, frame_height) 
 out = cv2.VideoWriter('555.avi', 
 						cv2.VideoWriter_fourcc(*'MJPG'), 
-						10, size) 
-
+						15, size) 
+object1 = videoQueue()
 
 while True and not stop_thread:
     # Capture frame-by-frame
@@ -173,6 +212,7 @@ while True and not stop_thread:
         if not ret:
             print("Can't receive frame (stream end?). Exiting ...")
             stop_thread = True
+            end_recording = True
             break
 
         ### Predict on image ###
@@ -244,7 +284,7 @@ while True and not stop_thread:
         #cv2.imwrite("sukrit_restaurant.jpg", frame) 
         list_realtime_count_cache = list_realtime_count.copy()
         reset_people_count()
-        out.write(frame)
+        object1.add_frame(frame) #add frame for recording
 
         if frame_count == 1:
             thread1.start()
