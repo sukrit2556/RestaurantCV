@@ -21,9 +21,6 @@ detection_colors, class_list = color_selector()
 def calculate_real_people_total():
     global list_total_count_cache, stop_thread
     #initialize sampling list
-    table_name = "customer_events"
-    fields = ("name", "address", "text1", "text2", "text3")
-    values = ("John", "Highway21", "fuck", "dsd", "ssss")
     sampling_from_tables = []
     for _ in range (len(table_points)):
         sampling_from_tables.append([])
@@ -104,6 +101,10 @@ def check_available():
                         insert_db(table_name, field_list, value_list)
                 else:                   #unoccupied
                     availability.append("unoccupied")
+                    if availability_cache[i] == "occupied":
+                        field_list = "customer_OUT"
+                        condition_list = [f"tableID = {i}"]
+                        update_db(table_name, field_list, datetime.now(), condition_list)
             print(availability)
 
 

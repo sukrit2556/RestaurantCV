@@ -164,8 +164,6 @@ def put_text_bottom_right(frame, text_to_put_list):
 def insert_db(table_name, field_list, value_list):
     mycursor = mydb.cursor()
 
-    table_name = table_name
-
     # Construct placeholders for values
     field_placeholders = ', '.join(['%s' for _ in field_list])
 
@@ -180,5 +178,32 @@ def insert_db(table_name, field_list, value_list):
 
     print(mycursor.rowcount, "record inserted.")
 
+def update_db(table_name, field_to_edit, new_value, condition_list):
+    mycursor = mydb.cursor()
+
+    # Create placeholders for conditions
+    condition_placeholders = ' AND '.join(['{}'.format(condition) for condition in condition_list])
+    print(condition_placeholders)
+
+    # Construct the SQL query string with placeholders
+    sql = f"UPDATE {table_name} SET {field_to_edit} = %s WHERE {condition_placeholders}"
+
+
+    # Print the SQL query (for debugging purposes)
+    print("Generated SQL query:", sql)
+
+    # Execute the query
+    mycursor.execute(sql, [new_value])
+
+    # Commit the transaction
+    mydb.commit()
+
+    print(mycursor.rowcount, "record(s) updated.")
+    
+
 if __name__ == "__main__":
-    insert_db("test", ["name", "address", "text1", "text2", "text3"], ["John", "Highway21", "fuck", "dsd", "ssss"])
+    #update_db("test", "name", "sukei", ["address = 'Highway21'", "text2 = 'suk'"])
+    i =2 
+    condition_list = [f"tableID = {i}"]
+    print(condition_list)
+    update_db("customer_events", "customer_OUT", datetime.now(), condition_list)
