@@ -5,15 +5,11 @@ import numpy as np
 import time
 import datetime
 from datetime import datetime
+import random
+from memory_profiler import profile
 
 import mysql.connector
 
-mydb = mysql.connector.connect(
-  host="127.0.0.1",
-  user="root",
-  password="",
-  database="restaurant"
-)
 
 font = cv2.FONT_HERSHEY_COMPLEX
 
@@ -161,7 +157,17 @@ def put_text_bottom_right(frame, text_to_put_list):
         )
         start_position_y += 30
 
+def connect_db():
+    mydb = mysql.connector.connect(
+        host="127.0.0.1",
+        user="root",
+        password="",
+        database="restaurant"
+        )
+    return mydb
+
 def insert_db(table_name, field_list, value_list):
+    mydb = connect_db()
     mycursor = mydb.cursor()
 
     # Construct placeholders for values
@@ -177,8 +183,11 @@ def insert_db(table_name, field_list, value_list):
     mydb.commit()
 
     print(mycursor.rowcount, "record inserted.")
+    mycursor.close()
+    mydb.close()
 
 def update_db(table_name, field_to_edit, new_value, condition_list):
+    mydb = connect_db()
     mycursor = mydb.cursor()
 
     # Create placeholders for conditions
@@ -199,8 +208,11 @@ def update_db(table_name, field_to_edit, new_value, condition_list):
     mydb.commit()
 
     print(mycursor.rowcount, "record(s) updated.")
+    mycursor.close()
+    mydb.close()
 
 def delete_data_db(table_name, condition_list):
+    mydb = connect_db()
     mycursor = mydb.cursor()
 
     # Create placeholders for conditions
@@ -221,10 +233,51 @@ def delete_data_db(table_name, condition_list):
     mydb.commit()
 
     print(mycursor.rowcount, "record(s) deleted.")
+    mycursor.close()
+    mydb.close()
+
+def select_db(table_name, field_name, where_condition):
+    mydb = connect_db()
+    mycursor = mydb.cursor()
+
+    formated_field_name = ', '.join(['{}'.format(field_names) for field_names in field_name])
+    formated_condition = ', '.join(['{}'.format(where_conditions) for where_conditions in where_condition])
+    # Construct the SQL query string with placeholders
+    sql = f"SELECT {formated_field_name} from {table_name} WHERE {formated_condition}"
+    print("generated sql = ", sql)
+
+    mycursor.execute(sql)
+
+    myresult = mycursor.fetchall()
+
+    for result in myresult:
+        print(result)
     
+    mycursor.close()
+    mydb.close()
+
+    return sql # for subquery uses
+
+@profile 
+def do_something():
+    some_list = []
+
+    for i in range (0, 6):
+        some_list.append([])
+    print(some_list)
+    for sublist in some_list:
+        print(sublist)
+        while len(sublist) < 100:
+            random_number = random.randint(1, 9)
+            sublist.append(random_number)
+
+    print(some_list)
+
 
 if __name__ == "__main__":
     #update_db("test", "name", "sukei", ["address = 'Highway21'", "text2 = 'suk'"])
-    i = "0000-00-00 00:00:00"
-    condition_list = [f"customer_OUT = '{i}'"]
-    delete_data_db("customer_events", condition_list)
+    do_something()
+    select_db("customer_events", ["*"], ["1"])
+    
+
+    

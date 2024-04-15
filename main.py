@@ -5,6 +5,7 @@ from function_bundle import *
 import threading
 import traceback
 import statistics
+from memory_profiler import profile
 
 frame_count = 0
 frame_rate = 0
@@ -19,6 +20,7 @@ end_recording = False
 detection_colors, class_list = color_selector()
 
 ####################### THREADING PROCESS {BEGIN} #######################
+@profile
 def calculate_real_people_total():
     global list_total_count_cache, stop_thread
     #initialize sampling list
@@ -58,10 +60,12 @@ def calculate_real_people_total():
                     list_total_count[i] = statistics.mode(sampling_from_tables[i])
                     #list_total_count[i] = max(sampling_from_tables[i])
                     #list_total_count[i] = round(sum(sampling_from_tables[i])/len(sampling_from_tables[i]))
-                    condition_list = [f"tableID = {i+1}"]
                     if (len(sampling_from_tables[i]) == 1 or len(sampling_from_tables[i]) == 25 or len(sampling_from_tables[i]) == 50 or 
                     len(sampling_from_tables[i]) == 75 or len(sampling_from_tables[i]) == 100):
-                        update_db(table_name, "customer_amount", list_total_count[i], condition_list)
+                        #UPDATE customer_events SET customer_amount = %s WHERE 
+                        #customer_IN = (SELECT MAX(customer_IN) from customer_events WHERE tableID = %s)
+                        update_db(table_name, "customer_amount", list_total_count[i], 
+                                  ["customer_IN = (" + select_db("customer_events", ["MAX(customer_IN)"], [f"tableID = {i+1}"]) + ")"])
                         
                 else: # have no sampling data
                     list_total_count[i] = 0
@@ -73,7 +77,7 @@ def calculate_real_people_total():
 
 
 
-
+@profile
 def check_available():
     global list_realtime_count_cache, stop_thread, availability_cache, check_available_started
     table_name = "customer_events"
@@ -107,8 +111,8 @@ def check_available():
                     print(availability)
                     if len(availability_cache) != 0 and availability_cache[i] == "occupied":
                         print("facckkkkk")
-                        condition_list = [f"tableID = {i+1}"]
-                        update_db(table_name, "customer_OUT", datetime.now(), condition_list)
+                        update_db(table_name, "customer_OUT", datetime.now(), 
+                                  ["customer_IN = (" + select_db("customer_events", ["MAX(customer_IN)"], [f"tableID = {i+1}"]) + ")"])
             print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
             print(availability)
 
