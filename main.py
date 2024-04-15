@@ -3,6 +3,7 @@ import numpy as np
 from ultralytics import YOLO
 from function_bundle import *
 import threading
+import traceback
 import statistics
 
 frame_count = 0
@@ -22,10 +23,12 @@ def calculate_real_people_total():
     global list_total_count_cache, stop_thread
     #initialize sampling list
     sampling_from_tables = []
+    table_name = "customer_events"
     for _ in range (len(table_points)):
         sampling_from_tables.append([])
 
     while not stop_thread:
+        
         if check_available_started:
             print("________________-Get in calculate now")
             list_total_count = list_realtime_count_cache.copy()
@@ -55,9 +58,10 @@ def calculate_real_people_total():
                     list_total_count[i] = statistics.mode(sampling_from_tables[i])
                     #list_total_count[i] = max(sampling_from_tables[i])
                     #list_total_count[i] = round(sum(sampling_from_tables[i])/len(sampling_from_tables[i]))
-                    if len(sampling_from_tables[i]) >= 100:
-                        # add to database
-                        pass
+                    condition_list = [f"tableID = {i+1}"]
+                    if (len(sampling_from_tables[i]) == 1 or len(sampling_from_tables[i]) == 25 or len(sampling_from_tables[i]) == 50 or 
+                    len(sampling_from_tables[i]) == 75 or len(sampling_from_tables[i]) == 100):
+                        update_db(table_name, "customer_amount", list_total_count[i], condition_list)
                         
                 else: # have no sampling data
                     list_total_count[i] = 0
@@ -91,7 +95,6 @@ def check_available():
             print("table_status", table_status)
 
             # determining the meaning of state
-
             for i, item in enumerate(table_status):
                 if item >= 5/2:   # occupied
                     availability.append("occupied")
@@ -101,18 +104,23 @@ def check_available():
                         insert_db(table_name, field_list, value_list)
                 else:                   #unoccupied
                     availability.append("unoccupied")
-                    if availability_cache[i] == "occupied":
-                        field_list = "customer_OUT"
-                        condition_list = [f"tableID = {i}"]
-                        update_db(table_name, field_list, datetime.now(), condition_list)
+                    print(availability)
+                    if len(availability_cache) != 0 and availability_cache[i] == "occupied":
+                        print("facckkkkk")
+                        condition_list = [f"tableID = {i+1}"]
+                        update_db(table_name, "customer_OUT", datetime.now(), condition_list)
+            print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
             print(availability)
-
 
             availability_cache = availability.copy()
             if check_available_started == False:
                 check_available_started = True
-        except:
-            pass
+            
+
+        except Exception as e:
+            print("error: ", e)
+            traceback.print_exc()
+            stop_thread = True
 
 def now_frame_rate():
     global frame_rate
@@ -167,12 +175,9 @@ thread3 = threading.Thread(target=check_available)
 thread4 = threading.Thread(target=combine_frame)
 ####################### THREADING PROCESS {END} #######################
 
+
 ### load a pretrained YOLOv8n model ###
 model = YOLO("weights/yolov8l.pt", "v8")
-
-# Vals to resize video frames | small frame optimise the run
-frame_wid = 1920
-frame_hyt = 1080
 
 ### select the source of captured frame ###
 source = config['source']
@@ -191,14 +196,12 @@ if not cap.isOpened():
 
 ### Amount of frame skipped ####
 frame_skipped = config['frame_skip']
-frame_width = 1920
-frame_height = 1080
-fps = 30
 
-size = (frame_width, frame_height) 
-out = cv2.VideoWriter('555.avi', 
-						cv2.VideoWriter_fourcc(*'MJPG'), 
-						15, size) 
+## delete incomplete data with no customer out time before the process
+i = "0000-00-00 00:00:00"
+condition_list = [f"customer_OUT = '{i}'"]
+delete_data_db("customer_events", condition_list)
+
 object1 = videoQueue()
 
 while True and not stop_thread:
@@ -288,9 +291,10 @@ while True and not stop_thread:
         object1.add_frame(frame) #add frame for recording
 
         if frame_count == 1:
-            thread1.start()
-            thread2.start()
-            thread3.start()
+            thread1.start() #calculate total person
+            thread2.start() #check availability
+            thread3.start() #check framerate
+            #thread4.start() #record video
         # Terminate run when "Q" pressed
         if cv2.waitKey(1) == ord("q"):
             break
@@ -298,7 +302,7 @@ while True and not stop_thread:
 thread1.join()
 thread2.join()
 thread3.join()
+#thread4.join()
 # When everything done, release the capture
 cap.release()
 cv2.destroyAllWindows()
-out.release()

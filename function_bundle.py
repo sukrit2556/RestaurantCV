@@ -199,11 +199,32 @@ def update_db(table_name, field_to_edit, new_value, condition_list):
     mydb.commit()
 
     print(mycursor.rowcount, "record(s) updated.")
+
+def delete_data_db(table_name, condition_list):
+    mycursor = mydb.cursor()
+
+    # Create placeholders for conditions
+    condition_placeholders = ' AND '.join(['{}'.format(condition) for condition in condition_list])
+    print(condition_placeholders)
+
+    # Construct the SQL query string with placeholders
+    sql = f"DELETE FROM {table_name} WHERE {condition_placeholders}"
+
+
+    # Print the SQL query (for debugging purposes)
+    print("Generated SQL query:", sql)
+
+    # Execute the query
+    mycursor.execute(sql)
+
+    # Commit the transaction
+    mydb.commit()
+
+    print(mycursor.rowcount, "record(s) deleted.")
     
 
 if __name__ == "__main__":
     #update_db("test", "name", "sukei", ["address = 'Highway21'", "text2 = 'suk'"])
-    i =2 
-    condition_list = [f"tableID = {i}"]
-    print(condition_list)
-    update_db("customer_events", "customer_OUT", datetime.now(), condition_list)
+    i = "0000-00-00 00:00:00"
+    condition_list = [f"customer_OUT = '{i}'"]
+    delete_data_db("customer_events", condition_list)
