@@ -295,7 +295,8 @@ while True and not stop_thread:
         #cv2.imwrite("sukrit_restaurant.jpg", frame) 
         list_realtime_count_cache = list_realtime_count.copy()
         reset_people_count()
-        object1.add_frame(frame) #add frame for recording
+        
+        #object1.add_frame(frame) # uncomment without recording cause memory leak!
 
         if frame_count == 1:
             thread1.start() #calculate total person
