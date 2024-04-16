@@ -140,8 +140,9 @@ def count_table_people(horizon_center, vertical_center):
 
 
 def reset_people_count():
+    list_realtime_count.clear()
     for i in range (len(table_points)):
-        list_realtime_count[i] = 0
+        list_realtime_count.append(0)
       
 def put_text_bottom_right(frame, text_to_put_list):
     start_position_x = 500

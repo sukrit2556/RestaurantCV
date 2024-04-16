@@ -29,51 +29,54 @@ def calculate_real_people_total():
     for _ in range (len(table_points)):
         sampling_from_tables.append([])
 
-    while not stop_thread:
-        
-        if check_available_started:
-            print("________________-Get in calculate now")
-            list_total_count = list_realtime_count_cache.copy()
-            
-            print("sampling_from_tables", sampling_from_tables)
-
-            # operating
-            for i in range (len(table_points)):
-
-                print(i)
-            
-                # if occupied then keep collecting until it reaches 100 collection
-                if availability_cache[i] == "occupied" and len(sampling_from_tables[i]) < 100:
-                    realtime_count_that_table = list_total_count[i]
-                    sampling_from_tables[i].append(realtime_count_that_table)
-
-                elif availability_cache[i] == "unoccupied": #if become unoccupied then reset
-                    sampling_from_tables[i] = []
-                    
+    try:
+        while not stop_thread:
+            if check_available_started:
+                print("________________-Get in calculate now")
+                list_total_count = list_realtime_count_cache.copy()
                 
-            print("helloooooooooooooooooooooooooooooooooooooooooooooooooooo")
-            print(sampling_from_tables)
+                print("sampling_from_tables", sampling_from_tables)
 
-            # determine the meaning
-            for i in range (len(table_points)):
-                if len(sampling_from_tables[i]) > 0: # have sampling data
-                    list_total_count[i] = statistics.mode(sampling_from_tables[i])
-                    #list_total_count[i] = max(sampling_from_tables[i])
-                    #list_total_count[i] = round(sum(sampling_from_tables[i])/len(sampling_from_tables[i]))
-                    if (len(sampling_from_tables[i]) == 1 or len(sampling_from_tables[i]) == 25 or len(sampling_from_tables[i]) == 50 or 
-                    len(sampling_from_tables[i]) == 75 or len(sampling_from_tables[i]) == 100):
-                        #UPDATE customer_events SET customer_amount = %s WHERE 
-                        #customer_IN = (SELECT MAX(customer_IN) from customer_events WHERE tableID = %s)
-                        update_db(table_name, "customer_amount", list_total_count[i], 
-                                  ["customer_IN = (" + select_db("customer_events", ["MAX(customer_IN)"], [f"tableID = {i+1}"]) + ")"])
+                # operating
+                for i in range (len(table_points)):
+
+                    print(i)
+                
+                    # if occupied then keep collecting until it reaches 100 collection
+                    if availability_cache[i] == "occupied" and len(sampling_from_tables[i]) < 100:
+                        realtime_count_that_table = list_total_count[i]
+                        sampling_from_tables[i].append(realtime_count_that_table)
+
+                    elif availability_cache[i] == "unoccupied": #if become unoccupied then reset
+                        sampling_from_tables[i].clear()
                         
-                else: # have no sampling data
-                    list_total_count[i] = 0
-            list_total_count_cache = list_total_count.copy()
+                    
+                print("helloooooooooooooooooooooooooooooooooooooooooooooooooooo")
+                print(sampling_from_tables)
 
-            time.sleep(5)
-        else:
-            pass
+                # determine the meaning
+                for i in range (len(table_points)):
+                    if len(sampling_from_tables[i]) > 0: # have sampling data
+                        list_total_count[i] = statistics.mode(sampling_from_tables[i])
+                        #list_total_count[i] = max(sampling_from_tables[i])
+                        #list_total_count[i] = round(sum(sampling_from_tables[i])/len(sampling_from_tables[i]))
+                        if (len(sampling_from_tables[i]) == 1 or len(sampling_from_tables[i]) == 25 or len(sampling_from_tables[i]) == 50 or 
+                        len(sampling_from_tables[i]) == 75 or len(sampling_from_tables[i]) == 100):
+                            #UPDATE customer_events SET customer_amount = %s WHERE 
+                            #customer_IN = (SELECT MAX(customer_IN) from customer_events WHERE tableID = %s)
+                            update_db(table_name, "customer_amount", list_total_count[i], 
+                                    ["customer_IN = (" + select_db("customer_events", ["MAX(customer_IN)"], [f"tableID = {i+1}"]) + ")"])
+                            
+                    else: # have no sampling data
+                        list_total_count[i] = 0
+                list_total_count_cache = list_total_count.copy()
+                list_total_count.clear()
+
+                time.sleep(5)
+    except Exception as e:
+        print("error: ", e)
+        traceback.print_exc()
+        stop_thread = True
 
 
 
