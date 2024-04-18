@@ -20,7 +20,6 @@ end_recording = False
 detection_colors, class_list = color_selector()
 
 ####################### THREADING PROCESS {BEGIN} #######################
-@profile
 def calculate_real_people_total():
     global list_total_count_cache, stop_thread
     #initialize sampling list
@@ -78,9 +77,6 @@ def calculate_real_people_total():
         traceback.print_exc()
         stop_thread = True
 
-
-
-@profile
 def check_available():
     global list_realtime_count_cache, stop_thread, availability_cache, check_available_started
     table_name = "customer_events"
