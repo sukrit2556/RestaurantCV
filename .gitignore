@@ -1,0 +1,5 @@
+inference/
+runs/
+yolov8x.pt
+yolov8m.pt
+yolov8n.pt
