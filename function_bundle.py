@@ -14,6 +14,7 @@ import mysql.connector
 font = cv2.FONT_HERSHEY_COMPLEX
 
 table_points = []
+table_crop_points = []
 list_realtime_count = []
 
 class videoQueue:
@@ -37,7 +38,7 @@ class videoQueue:
 ######### Initialize the table point [START] #########
 with open('myconfig.yaml', 'r') as file:
     config = yaml.safe_load(file)
-    #print(config)
+    print(config)
 
 # Access the points from the config dictionary
 for key, value in config["table_coordinate"].items():
@@ -46,6 +47,14 @@ for key, value in config["table_coordinate"].items():
 
 # Convert lists to numpy arrays
 table_points = np.array(table_points, dtype=np.int32)
+
+# Access the points from the config dictionary
+for key, value in config["table_crop_coord"].items():
+    print(value)
+    table_crop_points.append(value)
+
+# Convert lists to numpy arrays
+table_crop_points = np.array(table_crop_points, dtype=np.int32)
 ######### Initialize the table point [END] #########
 
 ### initialize the zero list of people count for every table
@@ -273,6 +282,13 @@ def do_something():
             sublist.append(random_number)
 
     print(some_list)
+
+def draw_from_points(frame, list_point_all_table):
+    ## draw and put text for each table
+    for table_no, pts in enumerate(list_point_all_table):
+        cv2.polylines(frame, [pts], isClosed=True, color=(255, 0, 0), thickness=2)
+
+    return frame
 
 
 if __name__ == "__main__":

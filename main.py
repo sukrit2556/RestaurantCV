@@ -5,7 +5,6 @@ from function_bundle import *
 import threading
 import traceback
 import statistics
-from memory_profiler import profile
 
 frame_count = 0
 frame_rate = 0
@@ -274,6 +273,7 @@ while True and not stop_thread:
         
         ### draw table area ###
         draw_table_point(frame, availability_cache)
+        draw_from_points(frame, table_crop_points)
         
         # put text on the bottom right bottom
         text_to_put_list = []
