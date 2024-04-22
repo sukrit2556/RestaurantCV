@@ -4,12 +4,13 @@ import yaml
 import numpy as np
 import time
 import datetime
-from datetime import datetime
+from datetime import datetime, timedelta
 import random
 from memory_profiler import profile
+from ultralytics import YOLO
+
 
 import mysql.connector
-
 
 font = cv2.FONT_HERSHEY_COMPLEX
 
@@ -18,10 +19,12 @@ table_crop_points = []
 list_realtime_count = []
 realtime_dimsum_found = []
 to_check = []
+fps = 0
 
 class videoQueue:   # for recording in thread 4
     def __init__(self):
         self.frame_queue = []
+        self.date_time_queue = []
         
     def add_frame(self, frame):
         self.frame_queue.append(frame)
@@ -42,6 +45,18 @@ class videoQueue:   # for recording in thread 4
     
     def clear_all(self):
         self.frame_queue.clear()
+        self.date_time_queue.clear()
+
+    def add_frame_obj(self, frame_obj):
+        self.frame_queue.append(frame_obj.frame)
+        self.date_time_queue.append(frame_obj.date_time)
+
+    def get_frame_obj(self):
+        if len(self.frame_queue) > 0:
+            obj = frame_attr(self.frame_queue.pop(0), self.date_time_queue.pop(0))
+            return obj
+        return None
+
 
 class frame_attr():
     def __init__(self, frame, date_time):
@@ -52,7 +67,33 @@ class frame_attr():
 ######### Initialize the table point [START] #########
 with open('myconfig.yaml', 'r') as file:
     config = yaml.safe_load(file)
-    #print(config)
+    print(config)
+
+        ### load a pretrained YOLOv8n model ###
+    model = YOLO(config['main_model_path'])
+
+    ### select the source of captured frame ###
+    source = config['source']
+    if source == "video_frame":
+        url_path = config['video_frame']['url']
+        cap = cv2.VideoCapture(url_path)
+        fps = fps = cap.get(cv2.CAP_PROP_FPS)
+        if config['video_frame']['simulate'] == "True":
+            simulate = True
+        else:
+            simulate = False
+
+    elif source == "live_frame":
+        url_path = config['live_frame']['url']
+        cap = cv2.VideoCapture(url_path)
+
+    ### Amount of frame skipped ####
+    frame_skipped = config['frame_skip']
+
+    if config['datetime'] == "now":
+        start_datetime = datetime.now()
+    else:
+        start_datetime = config['datetime']
 
 # Access the points from the config dictionary
 for key, value in config["table_coordinate"].items():
@@ -80,6 +121,22 @@ for _ in table_points:
 
 for _ in table_points:
     realtime_dimsum_found.append(0)
+
+object1 = videoQueue() #used for thread4 (recording)
+object2 = [] #used for detect dimsum
+check_dimsum_thread_list = []
+present_datetime = start_datetime
+for i in range (len(table_points)):
+    obj2 = videoQueue()
+    object2.append(obj2)
+    check_dimsum_thread_list.append(0)
+
+
+
+
+
+
+
 
 def color_selector():
     with open("utils/coco.txt", "r") as my_file:
@@ -313,8 +370,6 @@ def draw_from_points(frame, list_point_all_table):
 if __name__ == "__main__":
     #update_db("test", "name", "sukei", ["address = 'Highway21'", "text2 = 'suk'"])
     table_index = 1
-    update_db("customer_events", "time_getFood", datetime.now(), 
-               ["customer_IN = (" + select_db("customer_events", ["MAX(customer_IN)"], [f"tableID = {table_index+1}"]) + ")", f"tableID = {table_index+1}"])
-    
-
-    
+    update_db("customer_events", "time_getFood", "2023-03-12 09:57:38", 
+                      ["customer_ID = (" + select_db("customer_events", ["MAX(customer_ID)"], [f"tableID = {table_index+1}"]) + ")", 
+                       f"tableID = {table_index+1}"])
