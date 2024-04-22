@@ -11,3 +11,7 @@ yolov8n-seg.pt
 yolov8n.pt
 555.avi
 __pycache__/
+output.txt
+output.csv
+test.py
+bus.jpg

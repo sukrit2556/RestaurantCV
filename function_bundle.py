@@ -16,8 +16,10 @@ font = cv2.FONT_HERSHEY_COMPLEX
 table_points = []
 table_crop_points = []
 list_realtime_count = []
+realtime_dimsum_found = []
+to_check = []
 
-class videoQueue:
+class videoQueue:   # for recording in thread 4
     def __init__(self):
         self.frame_queue = []
         
@@ -34,15 +36,23 @@ class videoQueue:
             return True
         else:
             return False
+    
+    def get_len(self):
+        return len(self.frame_queue)
+    
+    def clear_all(self):
+        self.frame_queue.clear()
 
+class frame_attribute():
+    def __init__(self) -> None:
+        pass
 ######### Initialize the table point [START] #########
 with open('myconfig.yaml', 'r') as file:
     config = yaml.safe_load(file)
-    print(config)
+    #print(config)
 
 # Access the points from the config dictionary
 for key, value in config["table_coordinate"].items():
-    print(value)
     table_points.append(value)
 
 # Convert lists to numpy arrays
@@ -50,7 +60,6 @@ table_points = np.array(table_points, dtype=np.int32)
 
 # Access the points from the config dictionary
 for key, value in config["table_crop_coord"].items():
-    print(value)
     table_crop_points.append(value)
 
 # Convert lists to numpy arrays
@@ -61,6 +70,13 @@ table_crop_points = np.array(table_crop_points, dtype=np.int32)
 ## Use for counting people
 for _ in table_points:
     list_realtime_count.append(0)
+
+# use for set status what to check dimsum
+for _ in table_points:
+    to_check.append(0)
+
+for _ in table_points:
+    realtime_dimsum_found.append(0)
 
 def color_selector():
     with open("utils/coco.txt", "r") as my_file:
@@ -293,8 +309,9 @@ def draw_from_points(frame, list_point_all_table):
 
 if __name__ == "__main__":
     #update_db("test", "name", "sukei", ["address = 'Highway21'", "text2 = 'suk'"])
-    do_something()
-    select_db("customer_events", ["*"], ["1"])
+    table_index = 1
+    update_db("customer_events", "time_getFood", datetime.now(), 
+               ["customer_IN = (" + select_db("customer_events", ["MAX(customer_IN)"], [f"tableID = {table_index+1}"]) + ")", f"tableID = {table_index+1}"])
     
 
     

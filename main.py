@@ -14,6 +14,9 @@ list_total_count_cache = []
 list_realtime_count_cache = []
 availability_cache = []
 end_recording = False
+check_dimsum_started = False
+var1 = 0
+var2 = 0
 
 #### Initialize the color randomizer for detected box ####
 detection_colors, class_list = color_selector()
@@ -22,6 +25,7 @@ detection_colors, class_list = color_selector()
 def calculate_real_people_total():
     global list_total_count_cache, stop_thread
     #initialize sampling list
+    sampling_amount = 100
     sampling_from_tables = []
     table_name = "customer_events"
     for _ in range (len(table_points)):
@@ -41,7 +45,7 @@ def calculate_real_people_total():
                     print(i)
                 
                     # if occupied then keep collecting until it reaches 100 collection
-                    if availability_cache[i] == "occupied" and len(sampling_from_tables[i]) < 100:
+                    if availability_cache[i] == "occupied" and len(sampling_from_tables[i]) < sampling_amount:
                         realtime_count_that_table = list_total_count[i]
                         sampling_from_tables[i].append(realtime_count_that_table)
 
@@ -58,12 +62,13 @@ def calculate_real_people_total():
                         list_total_count[i] = statistics.mode(sampling_from_tables[i])
                         #list_total_count[i] = max(sampling_from_tables[i])
                         #list_total_count[i] = round(sum(sampling_from_tables[i])/len(sampling_from_tables[i]))
-                        if (len(sampling_from_tables[i]) == 1 or len(sampling_from_tables[i]) == 25 or len(sampling_from_tables[i]) == 50 or 
-                        len(sampling_from_tables[i]) == 75 or len(sampling_from_tables[i]) == 100):
+                        if (len(sampling_from_tables[i]) == 1 or 
+                            len(sampling_from_tables[i]) % 25 == 0):
                             #UPDATE customer_events SET customer_amount = %s WHERE 
                             #customer_IN = (SELECT MAX(customer_IN) from customer_events WHERE tableID = %s)
                             update_db(table_name, "customer_amount", list_total_count[i], 
-                                    ["customer_IN = (" + select_db("customer_events", ["MAX(customer_IN)"], [f"tableID = {i+1}"]) + ")"])
+                                    ["customer_IN = (" + select_db("customer_events", ["MAX(customer_IN)"], [f"tableID = {i+1}"]) + ")",
+                                     f"tableID = {i+1}"])
                             
                     else: # have no sampling data
                         list_total_count[i] = 0
@@ -82,6 +87,8 @@ def check_available():
     while not stop_thread:
         table_status = [] # 3 = occupied , 0 = unoccupied
         availability = []
+        print("check_available stop_thread = ", stop_thread)
+        print("IM INSIDE CHECKAVAILABLE IM INSIDE CHECKAVAILABLE")
         try:
             for table_no, _ in enumerate(table_points): #initialize list
                 table_status.append(0)
@@ -106,11 +113,10 @@ def check_available():
                         insert_db(table_name, field_list, value_list)
                 else:                   #unoccupied
                     availability.append("unoccupied")
-                    print(availability)
                     if len(availability_cache) != 0 and availability_cache[i] == "occupied":
-                        print("facckkkkk")
                         update_db(table_name, "customer_OUT", datetime.now(), 
-                                  ["customer_IN = (" + select_db("customer_events", ["MAX(customer_IN)"], [f"tableID = {i+1}"]) + ")"])
+                                  ["customer_IN = (" + select_db("customer_events", ["MAX(customer_IN)"], [f"tableID = {i+1}"]) + ")",
+                                   f"tableID = {i+1}"])
             print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
             print(availability)
 
@@ -168,13 +174,47 @@ def combine_frame():
         #time.sleep(0.1)
     out.release()
 
+def check_dimsum(table_index, object_frame_in):
+    model = YOLO("205trainset_400epoch_model_S.pt")
+    global stop_thread, realtime_dimsum_found, check_dimsum_started
+    to_check[table_index] = 2
+    frame_point = table_crop_points[table_index]
+    x_min = frame_point[0][0]
+    y_min = frame_point[0][1]
+    x_max = frame_point[2][0]
+    y_max = frame_point[2][1]
+    found = 0
+    itr = 0
+    while not stop_thread:
+        if not object_frame_in.is_empty():
+            itr += 1
+            print("check dimsum")
+            frame = object_frame_in.get_frame()
+            cropped_frame = frame[y_min:y_max, x_min:x_max]
+            results = model(source=[cropped_frame], conf=0.6, show=False, save=False, classes=[0])
+            realtime_dimsum_found[table_index] = len(results[0])
+            if len(results[0]) > 0:
+                found += 1
+
+        print("table: ", table_index, "itr: ", itr, "found: ", found)
+        if itr == 10 and found >= 6:
+            to_check[table_index] = 3
+            update_db("customer_events", "time_getFood", datetime.now(), 
+                      ["customer_IN = (" + select_db("customer_events", ["MAX(customer_IN)"], [f"tableID = {table_index+1}"]) + ")", 
+                       f"tableID = {table_index+1}"])
+            break
+        elif itr == 10 and found < 6:
+            itr = 0
+            found = 0
+        time.sleep(0.1)
+
+
 # Create and start the thread
 run_event = threading.Event()
 run_event.set()
-thread1 = threading.Thread(target=calculate_real_people_total)
-thread2 = threading.Thread(target=now_frame_rate)
-thread3 = threading.Thread(target=check_available)
-thread4 = threading.Thread(target=combine_frame)
+
+
+
 ####################### THREADING PROCESS {END} #######################
 
 
@@ -204,7 +244,26 @@ i = "0000-00-00 00:00:00"
 condition_list = [f"customer_OUT = '{i}'"]
 delete_data_db("customer_events", condition_list)
 
-object1 = videoQueue()
+object1 = videoQueue() #used for thread4 (recording)
+object2 = [] #used for detect dimsum
+object3 = [] #used for showing dimsum result
+check_dimsum_thread_list = []
+
+for i in range (len(table_points)):
+    object3.append(videoQueue())
+
+for i in range (len(table_points)):
+    obj2 = videoQueue()
+    object2.append(obj2)
+    check_dimsum_thread_list.append(0)
+
+thread1 = threading.Thread(target=calculate_real_people_total)
+thread2 = threading.Thread(target=check_available)
+thread3 = threading.Thread(target=now_frame_rate)
+thread4 = threading.Thread(target=combine_frame)
+
+blank_image = cv2.imread('inference/images/blank.png')
+blank_image = cv2.resize(blank_image, (512,288))
 
 while True and not stop_thread:
     # Capture frame-by-frame
@@ -220,6 +279,7 @@ while True and not stop_thread:
             stop_thread = True
             end_recording = True
             break
+        blank_frame = frame.copy()
 
         ### Predict on image ###
         detect_params = model(source=[frame], conf=0.4, show=False, save=False, classes=[0], tracker="bytetrack.yaml")
@@ -274,6 +334,12 @@ while True and not stop_thread:
         ### draw table area ###
         draw_table_point(frame, availability_cache)
         draw_from_points(frame, table_crop_points)
+
+        preview_queue_length = []
+        for item in object3:
+            list_length = item.get_len()
+            preview_queue_length.append(list_length)
+
         
         # put text on the bottom right bottom
         text_to_put_list = []
@@ -282,6 +348,8 @@ while True and not stop_thread:
         text_to_put_list.append("realtime: " + str(list_realtime_count))
         text_to_put_list.append("total: " + str(list_total_count_cache))
         text_to_put_list.append(str(availability_cache))
+        text_to_put_list.append("to check" + str(to_check))
+        text_to_put_list.append("dimsum found" + str(realtime_dimsum_found))
         put_text_bottom_right(frame, text_to_put_list)
         print("available: ", availability_cache)
         
@@ -292,6 +360,7 @@ while True and not stop_thread:
         list_realtime_count_cache = list_realtime_count.copy()
         reset_people_count()
         
+        
         #object1.add_frame(frame) # uncomment without recording cause memory leak!
 
         if frame_count == 1:
@@ -300,13 +369,33 @@ while True and not stop_thread:
             thread3.start() #check framerate
             #thread4.start() #record video
         # Terminate run when "Q" pressed
+        if check_available_started and any(item == "occupied" for item in availability_cache) and len(availability_cache) > 0:
+            for i, item in enumerate(availability_cache):
+                if item == "occupied" and to_check[i] == 0:
+                    to_check[i] = 1
+                    object2[i].add_frame(blank_frame)
+                    thread = threading.Thread(target=check_dimsum, args=(i, object2[i]))
+                    thread.start()
+                    check_dimsum_thread_list[i] = thread
+                elif to_check[i] == 2:
+                    object2[i].add_frame(blank_frame)
+                elif to_check[i] == 3:
+                    if check_dimsum_thread_list[i].is_alive():
+                        check_dimsum_thread_list[i].join()
+                
+                if (to_check[i] == 2 or to_check[i] == 3) and availability_cache[i] == "unoccupied":
+                    to_check[i] = 0
+                    realtime_dimsum_found[i] = 0
+                 
+        print("to_check: ", to_check)
+        print("main - stop_thread = ", stop_thread)
         if cv2.waitKey(1) == ord("q"):
             break
 
 thread1.join()
 thread2.join()
 thread3.join()
-#thread4.join()
-# When everything done, release the capture
+#thread4.join() # When everything done, release the capture
+
 cap.release()
 cv2.destroyAllWindows()
