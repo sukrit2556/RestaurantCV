@@ -273,6 +273,8 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
         elif not simulate and source == "live_frame":   #live frame
             print("case 3")
             ret, frame = cap.read() 
+            frame = cv2.resize(frame, (1920, 1080))
+
             present_datetime = datetime.now()
 
 
