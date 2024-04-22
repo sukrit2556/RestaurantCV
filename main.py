@@ -268,6 +268,9 @@ blank_image = cv2.resize(blank_image, (512,288))
 while True and not stop_thread:
     # Capture frame-by-frame
     ret, frame = cap.read() # if frame is read correctly ret is True
+
+    frame_obj = frame_attr(frame, datetime.now())
+    frame_data = frame_obj.frame
     
     # Frame counting
     frame_count += 1

@@ -3,6 +3,8 @@ frame_skip: 1
 
 video_frame:
   source: video
+  fps: 15
+  simulate: False
   url: "inference/videos/occupied_test_full.mp4"
 
 live_frame:

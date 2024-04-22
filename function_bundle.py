@@ -43,9 +43,12 @@ class videoQueue:   # for recording in thread 4
     def clear_all(self):
         self.frame_queue.clear()
 
-class frame_attribute():
-    def __init__(self) -> None:
-        pass
+class frame_attr():
+    def __init__(self, frame, date_time):
+        self.frame = frame
+        self.date_time = date_time
+
+
 ######### Initialize the table point [START] #########
 with open('myconfig.yaml', 'r') as file:
     config = yaml.safe_load(file)
