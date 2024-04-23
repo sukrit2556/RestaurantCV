@@ -1,0 +1,6 @@
+# Packages without specific versions or index URLs
+opencv-python 
+ultralytics
+numpy
+mysql-connector-python
+PyYAML
