@@ -3,3 +3,6 @@ runs/
 yolov8x.pt
 yolov8m.pt
 yolov8n.pt
+myenv/
+models/yolov8l.pt
+models/yolov8s.pt

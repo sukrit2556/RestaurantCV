@@ -1,4 +1,4 @@
-path: /Users/Sukri/Desktop/trainDimsum/datasets/dimsum # dataset root dir
+path: /Users/Sukri/Desktop/trainDimsum/datasets/131train_dimsum # dataset root dir
 train: images/train # train images (relative to 'path') 4 images
 val: images/val # val images (relative to 'path') 4 images
 
