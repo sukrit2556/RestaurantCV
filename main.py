@@ -5,13 +5,10 @@ from function_bundle import *
 import threading
 import traceback
 import statistics
-<<<<<<< HEAD
 import queue
 import logging
 import sys
 
-=======
->>>>>>> origin/main
 
 frame_count = 0
 frame_rate = 0
@@ -22,11 +19,8 @@ list_realtime_count_cache = []
 availability_cache = []
 end_recording = False
 check_dimsum_started = False
-<<<<<<< HEAD
 fakeCamFrame = None
 simulate_status = None
-=======
->>>>>>> origin/main
 
 #### Initialize the color randomizer for detected box ####
 detection_colors, class_list = color_selector()
@@ -138,13 +132,8 @@ def check_available():
                 if item >= 5/2:   # occupied
                     availability.append("occupied")
                     if len(availability_cache) == 0 or availability_cache[i] == "unoccupied":
-<<<<<<< HEAD
                         field_list = ["tableID", "customer_IN", "created_datetime"]
                         value_list = [i+1, present_datetime, datetime.now()]
-=======
-                        field_list = ["tableID", "customer_IN"]
-                        value_list = [i+1, present_datetime]
->>>>>>> origin/main
                         insert_db(table_name, field_list, value_list)
                 else:                   #unoccupied
                     availability.append("unoccupied")
@@ -245,7 +234,6 @@ def check_dimsum(table_index, object_frame_in):
             found = 0
         time.sleep(0.1)
 
-<<<<<<< HEAD
 def FakeCamera():
     print("inside Fack")
 
@@ -284,8 +272,6 @@ def FakeCamera():
 
     logging.debug('[FakeCamera] Ending')
     simulate_status = False
-=======
->>>>>>> origin/main
 
 # Create and start the thread
 run_event = threading.Event()
@@ -299,7 +285,6 @@ run_event.set()
 def main(source_platform, simulate, source_url, frame_skip, date_time):
     ## delete incomplete data with no customer out time before the process
 
-<<<<<<< HEAD
     global stop_thread, frame_count, fps, frame_rate, present_datetime, list_realtime_count_cache, object2, fakeCamFrame, simulate_status
     print("fps in main = ", fps)
     ### Start reading frame ###
@@ -323,14 +308,6 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
             stop_thread = True
             sys.exit()
 
-=======
-    global stop_thread, frame_count, fps, frame_rate, present_datetime, list_realtime_count_cache, object2
-
-    ### Start reading frame ###
-    if not cap.isOpened():
-        print("Cannot open camera")
-        exit()
->>>>>>> origin/main
 
     i = "0000-00-00 00:00:00"
     condition_list = [f"customer_OUT = '{i}'"]
@@ -347,7 +324,6 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
     while not stop_thread:
         # Capture frame-by-frame
         if not simulate and source == "video_frame":    #video frame and not simulate fake camera
-<<<<<<< HEAD
             ret, frame = cap.read() 
             present_datetime = present_datetime + timedelta(seconds=1/fps)
         elif simulate and source == "video_frame":      #video frame and simulate fake camera
@@ -364,17 +340,6 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
             # Show the current frame
             cv2.imshow('fakevid', frame)"""
         elif not simulate and source == "live_frame":   #live frame
-=======
-            print("case 1")
-            ret, frame = cap.read() 
-            present_datetime = present_datetime + timedelta(seconds=1/fps)
-        elif simulate and source == "video_frame":      #video frame and simulate fake camera
-            print("case 2")
-            ret, frame = cap.read() 
-            present_datetime = datetime.now()
-        elif not simulate and source == "live_frame":   #live frame
-            print("case 3")
->>>>>>> origin/main
             ret, frame = cap.read() 
             frame = cv2.resize(frame, (1920, 1080))
 
@@ -486,12 +451,6 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
             if check_available_started and not thread1.is_alive():
                 thread1.start() #calculate total person
 
-<<<<<<< HEAD
-=======
-            print("here's object 2 ")
-            print("obect2", object2)
-            cv2.imshow("blank frame", blank_frame_obj.frame)
->>>>>>> origin/main
             
             if check_available_started and any(item == "occupied" for item in availability_cache) and len(availability_cache) > 0:
                 for i, item in enumerate(availability_cache):
@@ -506,7 +465,6 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
                     elif to_check[i] == 3:
                         if check_dimsum_thread_list[i].is_alive():
                             check_dimsum_thread_list[i].join()
-<<<<<<< HEAD
                             check_dimsum_thread_list[i] = 0
 
                     if (to_check[i] == 2 and availability_cache[i] == "unoccupied") or (to_check[i] == 3 and availability_cache[i] == "unoccupied"):
@@ -520,20 +478,11 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
                         check_dimsum_thread_list[i].join()
 
 
-=======
-                    
-                    if (to_check[i] == 2 or to_check[i] == 3) and availability_cache[i] == "unoccupied":
-                        to_check[i] = 0
-                        realtime_dimsum_found[i] = 0
->>>>>>> origin/main
                     
             print("to_check: ", to_check)
             print("main - stop_thread = ", stop_thread)
             if cv2.waitKey(1) == ord("q"):
-<<<<<<< HEAD
                 stop_thread = True
-=======
->>>>>>> origin/main
                 break
 
     thread3.join()
@@ -541,7 +490,6 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
     thread1.join()
     #thread4.join() # When everything done, release the capture
 
-<<<<<<< HEAD
     if simulate:
         fakeCamThread.join()
 
@@ -549,11 +497,6 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
     cv2.destroyAllWindows()
 
 
-=======
-    cap.release()
-    cv2.destroyAllWindows()
-
->>>>>>> origin/main
 if config['source'] == "video_frame":
     main(config['source'], simulate, url_path, frame_skipped, start_datetime)
 

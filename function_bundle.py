@@ -6,10 +6,6 @@ import time
 import datetime
 from datetime import datetime, timedelta
 import random
-<<<<<<< HEAD
-=======
-from memory_profiler import profile
->>>>>>> origin/main
 from ultralytics import YOLO
 
 
@@ -24,10 +20,6 @@ realtime_dimsum_found = []
 to_check = []
 fps = 0
 
-<<<<<<< HEAD
-
-=======
->>>>>>> origin/main
 class videoQueue:   # for recording in thread 4
     def __init__(self):
         self.frame_queue = []
@@ -84,14 +76,9 @@ with open('myconfig.yaml', 'r') as file:
     if source == "video_frame":
         url_path = config['video_frame']['url']
         cap = cv2.VideoCapture(url_path)
-<<<<<<< HEAD
         fps = cap.get(cv2.CAP_PROP_FPS)
         print("fps in func = ", fps)
         if config['video_frame']['simulate'] == True:
-=======
-        fps = fps = cap.get(cv2.CAP_PROP_FPS)
-        if config['video_frame']['simulate'] == "True":
->>>>>>> origin/main
             simulate = True
         else:
             simulate = False
@@ -99,10 +86,7 @@ with open('myconfig.yaml', 'r') as file:
     elif source == "live_frame":
         url_path = config['live_frame']['url']
         cap = cv2.VideoCapture(url_path)
-<<<<<<< HEAD
         fps = cap.get(cv2.CAP_PROP_FPS)
-=======
->>>>>>> origin/main
 
     ### Amount of frame skipped ####
     frame_skipped = config['frame_skip']
@@ -361,10 +345,6 @@ def select_db(table_name, field_name, where_condition):
 
     return sql # for subquery uses
 
-<<<<<<< HEAD
-=======
-@profile 
->>>>>>> origin/main
 def do_something():
     some_list = []
 

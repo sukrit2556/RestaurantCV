@@ -14,9 +14,5 @@ __pycache__/
 output.txt
 output.csv
 test.py
-<<<<<<< HEAD
 bus.jpg
 .venv
-=======
-bus.jpg
->>>>>>> origin/main
