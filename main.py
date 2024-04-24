@@ -366,7 +366,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
             blank_frame_obj = frame_attr(blank_frame, frame_time)
 
             ### Predict on image ###
-            detect_params = model.track(source=[frame_data], conf=0.4, show=False, save=False, classes=[0], tracker="bytetrack.yaml")
+            detect_params = model(source=[frame_data], conf=0.4, show=False, save=False, classes=[0], tracker="bytetrack.yaml")
 
             # Convert tensor array to numpy
             DP = detect_params[0].cpu().numpy()
