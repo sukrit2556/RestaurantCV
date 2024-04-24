@@ -1,0 +1,127 @@
+/*------------------------- Log-in page -----------------------------*/
+body {
+    font-family: 'Prompt', sans-serif;
+}
+.column_banner {
+    background-image: linear-gradient(to right, rgb(22, 88, 86), rgb(141, 172, 166));
+    height: 568px;
+}
+.login_img {
+    margin-top: 25%;
+    margin-left: auto;
+    margin-right: auto;
+    height: 150px;
+    width: 150px;
+}
+.login_font{
+    padding-top: 5%;
+    text-align: center;
+    color: aliceblue;
+}
+.login-form-field {
+    height: 50px;
+    border-radius: 50px;
+    font-size: 1.1rem;
+    padding-left: 1.2rem;
+}
+.btn-login_field {
+    width: 40%;
+    height: 40px;
+    margin-bottom: 100px;
+    border-radius: 50px;
+    color: rgb(64, 128, 125);
+    border-color: rgb(186, 217, 211);
+    background-color: rgb(186, 217, 211);
+}
+.btn-login_field:hover {
+    background-color: rgb(64, 128, 125);
+    border-color: rgb(64, 128, 125);
+    color: white;
+}
+.login {
+    margin-top: 100px;
+}
+.link {
+    color: rgb(179, 179, 179);
+    margin-right: 45px;
+}
+.link:hover {
+    color: rgb(64, 128, 125);
+}
+
+/*------------------------- Sign up page -----------------------------*/
+.left_banner {
+    background-image: linear-gradient(to right, rgb(64, 128, 125), rgb(141, 172, 166));
+    height: 568px;
+}
+.right_banner {
+    background-image: linear-gradient(to right, rgb(141, 172, 166), rgb(64, 128, 125));
+    height: 568px;
+}
+.signup {
+    margin-top: 100px
+}
+.hr {
+    margin-left: 100px;
+    margin-right: 100px;
+}
+
+/*------------------------- Menu page -----------------------------*/
+.menu {
+    height: 200px;
+}
+.bg-green {
+    background-color:  rgb(248, 245, 245);
+}
+.bg-green:hover {
+    background-color: rgb(186, 217, 211);
+}
+.navbar-bg {
+    background-image: linear-gradient(to right, #165856, rgb(141, 172, 166));
+}
+.font-nav {
+    color:aliceblue;
+}
+a:hover { text-decoration: none; }
+a:active { text-decoration: none; }
+.op-butt {
+    font-size: 100%;
+    color: #165856;
+}
+.op-butt:hover {
+    color: white;
+    text-decoration: none;
+    
+}
+.font-log {
+    color: rgb(177, 8, 8);
+}
+.font-log:hover {
+    color: rgb(255, 255, 255);
+}
+.size-img {
+    width: auto;
+    height: 100px;
+}
+
+/*------------------------CustEvent-table------------------------*/
+.list-butt {
+    background-color:rgb(205, 205, 205);
+}
+.list-hov:hover {
+    background-color: rgb(205, 205, 205);
+}
+.menu-bar {
+    height: 25px;
+    width: auto;
+}
+.icon-bar {
+    height: auto;
+    width: 16px;
+}
+.link-d {
+    color: rgb(179, 179, 179);
+}
+.link-d:hover {
+    color: rgb(64, 128, 125);
+}
