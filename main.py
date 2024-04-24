@@ -222,12 +222,13 @@ def check_dimsum(table_index, object_frame_in):
             if len(results[0]) > 0:
                 found += 1
 
-        print("table: ", table_index, "itr: ", itr, "found: ", found)
+        #print("table: ", table_index, "itr: ", itr, "found: ", found)
         if itr == 10 and found >= 6:
             to_check[table_index] = 3
             update_db("customer_events", "time_getFood", frame_datetime, 
                       ["customer_ID = (" + select_db("customer_events", ["MAX(customer_ID)"], [f"tableID = {table_index+1}"]) + ")", 
                        f"tableID = {table_index+1}"])
+            object_frame_in.clear_all()
             break
         elif itr == 10 and found < 6:
             itr = 0
@@ -365,7 +366,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
             blank_frame_obj = frame_attr(blank_frame, frame_time)
 
             ### Predict on image ###
-            detect_params = model(source=[frame_data], conf=0.4, show=False, save=False, classes=[0])
+            detect_params = model.track(source=[frame_data], conf=0.4, show=False, save=False, classes=[0], tracker="bytetrack.yaml")
 
             # Convert tensor array to numpy
             DP = detect_params[0].cpu().numpy()
