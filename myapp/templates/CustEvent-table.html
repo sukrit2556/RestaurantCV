@@ -154,22 +154,18 @@
                     <th scope="col" style="width: 20%">More</th>
                   </tr>
                 </thead>
+                {% for customer_events in customer_events %}
                   <tr>
-                    <th scope="row">1</th>
-                    <td>#</td>
-                    <td>#</td>
-                    <td>#</td>
-                    <td>#</td>
+                    <th scope="row">{{ customer_events.customer_out }}</th>
+                    <td>{{ customer_events.customer_id }}</td>
+                    <td>{{ customer_events.tableid }}</td>
+                    <td>{{ customer_events.customer_amount }}</td>
+                    <td>
+                      <img src="{{ customer_events.captured_video.url }}">
+                    </td>
                     <td><a href="CustDetail" class="link-d">Details</a></td>
                   </tr>
-                    <tr>
-                      <th scope="row">2</th>
-                      <td>#</td>
-                      <td>#</td>
-                      <td>#</td>
-                      <td>#</td>
-                      <td><a href="CustDetail" class="link-d">Details</a></td>
-                    </tr>
+                {% endfor %}
             </table>
         </div>
     </div>

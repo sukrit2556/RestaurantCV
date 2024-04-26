@@ -1,5 +1,6 @@
 from django.shortcuts import render
-from django.http import HttpResponse
+from .models import CustomerEvents
+
 
 # Create your views here.
 def login(request):
@@ -15,7 +16,11 @@ def CustDetail(request):
     return render(request,"CustEvent-detail.html")
 
 def CustTable(request):
-    return render(request,"CustEvent-table.html")
+    customer_events = CustomerEvents.objects.all()
+    context = {
+        'customer_events': customer_events
+    }
+    return render(request,"CustEvent-table.html",context)
 
 def EmTable(request):
     return render(request,"EmEvent-table.html")
