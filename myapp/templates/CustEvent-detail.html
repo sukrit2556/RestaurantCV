@@ -87,9 +87,9 @@
 
 <div class="row">
 <div class="col-md-3">
-    <div class="d-flex flex-column flex-shrink-0 p-3 bg-light" style="width: 250px; height: 480px;">
+    <div class="d-flex flex-column flex-shrink-0 p-3 bg-light" style="max-width: 100%; height: 480px;">
         <a href="menu" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto link-dark text-decoration-none">
-          <img src="{% static 'img/menu.png' %}" class="menu-bar me-2" alt="">
+          <img src="{% static 'img/menu.png' %}" class="menu-bar me-2 ms-3" alt="">
           <span class="fs-4 align-items-center"><b>Menu</b></span>
         </a>
         <hr>
@@ -141,20 +141,30 @@
       </div>
     </div> 
     <div class="col-md-9">
-        <div class="card my-3 ml-auto mr-5" style="width: 380px; height: 400px;">
-            <div class="card-body text-start">
-                <p class="text-center"><strong>More details</strong></p>
-                <hr>
-                <p><strong>Event No.:</strong></p>
-                <p><strong>Date:</strong></p>
-                <p><strong>Time:</strong></p>
-                <p><strong>Table No.:</strong></p>
-                <p><strong>จำนวนลูกค้า:</strong></p>
-                <p><strong>ระยะเวลาที่ลูกค้าอยู่ที่โต๊ะ:</strong></p>
-                <p><strong>เวลาที่ check bill:</strong></p>
-                <p><strong>ระยะเวลาที่รออาหาร:</strong></p>
-            </div>
+      <div class="row mt-5">
+        <img src="{{ customer_detail.getfood_frame }}" class="rounded mx-auto d-block img-fluid" style="max-width: 640px; max-height: 360px;" alt="...">
+
+        <div class="card ml-auto mr-auto" style="width: 380px; height: 400px;">
+          <div class="card-body text-start">
+              <p class="text-center"><strong>More details</strong></p>
+              <hr>
+              <p><strong>Event No.: {{ customer_detail.customer_id }}</strong></p>
+              <p><strong>Date: {{ customer_detail.customer_id }}</strong></p>
+              <p><strong>Time: {{ customer_detail.customer_id }}</strong></p>
+              <p><strong>Table No.: {{ customer_detail.customer_id }}</strong></p>
+              <p><strong>จำนวนลูกค้า: {{ customer_detail.customer_id }}</strong></p>
+              <p><strong>ระยะเวลาที่ลูกค้าอยู่ที่โต๊ะ: {{ customer_detail.customer_id }}</strong></p>
+              <p><strong>เวลาที่ check bill: {{ customer_detail.customer_id }}</strong></p>
+              <p><strong>ระยะเวลาที่รออาหาร: {{ customer_detail.customer_id }}</strong></p>
+          </div>
         </div>
+      </div>
+      <div class="row mt-5">
+        <video width="400" controls>
+          <source src="{{ customer_detail.captured_video }}" type="video/mp4">
+          Your browser does not support HTML video.
+        </video>
+      </div>
     </div>
 </div>
 </body>

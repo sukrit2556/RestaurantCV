@@ -1,5 +1,8 @@
 from django.shortcuts import render
+from django.template import loader
 from .models import CustomerEvents
+from django.http import HttpResponse
+
 
 
 # Create your views here.
@@ -12,8 +15,14 @@ def signup(request):
 def menu(request):
     return render(request,"menu.html")
 
-def CustDetail(request):
-    return render(request,"CustEvent-detail.html")
+def CustDetail(request, id):
+    customer_detail = CustomerEvents.objects.get(customer_id = id)
+    template = loader.get_template('CustEvent-detail.html')
+    context = {
+        'customer_detail': customer_detail,
+    }
+    return HttpResponse(template.render(context, request))
+    
 
 def CustTable(request):
     customer_events = CustomerEvents.objects.all()

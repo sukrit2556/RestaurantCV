@@ -12,4 +12,5 @@ urlpatterns = [
     path('ResTable',views.ResTable),
     path('ListTable',views.ListTable),
     path('Dashboard',views.Dashboard),
+    path('CustDetail/<int:id>', views.CustDetail, name='details')
 ]
