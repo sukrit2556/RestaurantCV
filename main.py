@@ -74,7 +74,7 @@ def calculate_real_people_total():
                         #UPDATE customer_events SET customer_amount = %s WHERE 
                         #customer_IN = (SELECT MAX(customer_IN) from customer_events WHERE tableID = %s)
                         update_db(table_name, "customer_amount", list_total_count[i], 
-                                ["customer_ID = (" + select_db("customer_events", ["MAX(customer_ID)"], [f"tableID = {i+1}"]) + ")",
+                                ["customer_ID = (" + f"{select_db('customer_events', ['MAX(customer_ID)'], [f'tableID = {i+1}'])[0]})",
                                 f"tableID = {i+1}"])
                         
                 else: # have no sampling data
@@ -139,7 +139,7 @@ def check_available():
                     availability.append("unoccupied")
                     if len(availability_cache) != 0 and availability_cache[i] == "occupied":
                         update_db(table_name, "customer_OUT", present_datetime, 
-                                  ["customer_ID = (" + select_db("customer_events", ["MAX(customer_ID)"], [f"tableID = {i+1}"]) + ")",
+                                  ["customer_ID = (" + f"{select_db('customer_events', ['MAX(customer_ID)'], [f'tableID = {i+1}'])[0]})",
                                    f"tableID = {i+1}"])
             print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
             print(availability)
@@ -226,8 +226,10 @@ def check_dimsum(table_index, object_frame_in):
         if itr == 10 and found >= 6:
             to_check[table_index] = 3
             update_db("customer_events", "time_getFood", frame_datetime, 
-                      ["customer_ID = (" + select_db("customer_events", ["MAX(customer_ID)"], [f"tableID = {table_index+1}"]) + ")", 
+                      ["customer_ID = (" + f"{select_db('customer_events', ['MAX(customer_ID)'], [f'tableID = {table_index+1}'])[0]})", 
                        f"tableID = {table_index+1}"])
+            _, result = select_db("customer_events", ["MAX(customer_ID)"], [f"tableID = {table_index+1}"])
+            print(result[0][0])
             object_frame_in.clear_all()
             break
         elif itr == 10 and found < 6:
@@ -292,7 +294,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
     if not simulate and  not cap.isOpened():
         print("Cannot open camera")
         exit()
-    elif simulate and source == "video_frame":
+    elif simulate and source_platform == "video_frame":
 
         # Create a fake camera thread that reads the video in "real-time"
         if frame_count == 0:
@@ -324,10 +326,10 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
 
     while not stop_thread:
         # Capture frame-by-frame
-        if not simulate and source == "video_frame":    #video frame and not simulate fake camera
+        if not simulate and source_platform == "video_frame":    #video frame and not simulate fake camera
             ret, frame = cap.read() 
             present_datetime = present_datetime + timedelta(seconds=1/fps)
-        elif simulate and source == "video_frame":      #video frame and simulate fake camera
+        elif simulate and source_platform == "video_frame":      #video frame and simulate fake camera
             present_datetime = datetime.now()
             ret, frame = simulate_status, fakeCamFrame.copy()
             """frame = cv2.putText(frame, 
@@ -340,12 +342,11 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
             )
             # Show the current frame
             cv2.imshow('fakevid', frame)"""
-        elif not simulate and source == "live_frame":   #live frame
+        elif not simulate and source_platform == "live_frame":   #live frame
             ret, frame = cap.read() 
             frame = cv2.resize(frame, (1920, 1080))
 
             present_datetime = datetime.now()
-
 
 
         frame_obj = frame_attr(frame, present_datetime)
@@ -356,7 +357,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
         frame_count += 1
 
         ### Process the frame skipped ###
-        if frame_count == 1 or (frame_count) % frame_skipped == 0:
+        if frame_count == 1 or (frame_count) % frame_skip == 0:
             if not ret:
                 print("Can't receive frame (stream end?). Exiting ...")
                 stop_thread = True
@@ -442,12 +443,12 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
             reset_people_count()
             
             
-            object1.add_frame(frame) # uncomment without recording cause memory leak!
+            #object1.add_frame(frame) # uncomment without recording cause memory leak!
 
             if frame_count == 1:
                 thread2.start() #check availability
                 thread3.start()#check framerate
-                thread4.start() #record video
+                #thread4.start() #record video
             # Terminate run when "Q" pressed
             if check_available_started and not thread1.is_alive():
                 thread1.start() #calculate total person
@@ -489,7 +490,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
     thread3.join()
     thread2.join()
     thread1.join()
-    thread4.join() # When everything done, release the capture
+    #thread4.join() # When everything done, release the capture
 
     if simulate:
         fakeCamThread.join()

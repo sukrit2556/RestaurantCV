@@ -343,7 +343,7 @@ def select_db(table_name, field_name, where_condition):
     mycursor.close()
     mydb.close()
 
-    return sql # for subquery uses
+    return sql, myresult # for subquery uses
 
 def do_something():
     some_list = []
@@ -370,6 +370,9 @@ def draw_from_points(frame, list_point_all_table):
 if __name__ == "__main__":
     #update_db("test", "name", "sukei", ["address = 'Highway21'", "text2 = 'suk'"])
     table_index = 1
-    update_db("customer_events", "time_getFood", "2023-03-12 09:57:38", 
-                      ["customer_ID = (" + select_db("customer_events", ["MAX(customer_ID)"], [f"tableID = {table_index+1}"]) + ")", 
+    """_, result = select_db("customer_events", ["MAX(customer_ID)"], [f"tableID = {table_index+1}"])
+    print(result[0][0])"""
+    update_db("customer_events", "time_getFood", datetime.now(), 
+                      ["customer_ID = (" + f"{select_db('customer_events', ['MAX(customer_ID)'], [f'tableID = {table_index+1}'])[0]})", 
                        f"tableID = {table_index+1}"])
+
