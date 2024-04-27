@@ -169,13 +169,12 @@ def combine_frame():
     # Define video resolution and frame rate
     frame_width = 1920
     frame_height = 1080
-    fps = 30
 
     size = (frame_width, frame_height) 
     # Define codec and create VideoWriter object
     out = cv2.VideoWriter('result_video/TestOccupied.avi', 
 						cv2.VideoWriter_fourcc(*'MJPG'), 
-						15, size) 
+						8, size) 
 
     while not stop_thread and not end_recording:
         print("COMBINE FRAME IS STILL WORKING FINE")
@@ -191,12 +190,13 @@ def combine_frame():
             completed_frames = cv2.resize(completed_frames, (1920,1080))
             out.write(completed_frames)
             # Display the combined frame
-            #cv2.imshow('completed_frames', completed_frames)
+            cv2.imshow('completed_frames', completed_frames)
             completed_frames = None
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
         #time.sleep(0.1)
     out.release()
+    print("out_released")
 
 def check_dimsum(table_index, object_frame_in):
     model = YOLO(config['dimsum_model_path'])
@@ -286,7 +286,7 @@ run_event.set()
 def main(source_platform, simulate, source_url, frame_skip, date_time):
     ## delete incomplete data with no customer out time before the process
 
-    global stop_thread, frame_count, fps, frame_rate, present_datetime, list_realtime_count_cache, object2, fakeCamFrame, simulate_status
+    global stop_thread, frame_count, fps, frame_rate, present_datetime, list_realtime_count_cache, object2, fakeCamFrame, simulate_status, end_recording
     print("fps in main = ", fps)
     ### Start reading frame ###
     if not simulate and  not cap.isOpened():
@@ -366,7 +366,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
             blank_frame_obj = frame_attr(blank_frame, frame_time)
 
             ### Predict on image ###
-            detect_params = model(source=[frame_data], conf=0.4, show=False, save=False, classes=[0], tracker="bytetrack.yaml")
+            detect_params = model.track(source=[frame_data], conf=0.4, show=False, save=False, persist=True, classes=[0], tracker="bytetrack.yaml")
 
             # Convert tensor array to numpy
             DP = detect_params[0].cpu().numpy()
@@ -442,12 +442,12 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
             reset_people_count()
             
             
-            #object1.add_frame(frame) # uncomment without recording cause memory leak!
+            object1.add_frame(frame) # uncomment without recording cause memory leak!
 
             if frame_count == 1:
                 thread2.start() #check availability
                 thread3.start()#check framerate
-                #thread4.start() #record video
+                thread4.start() #record video
             # Terminate run when "Q" pressed
             if check_available_started and not thread1.is_alive():
                 thread1.start() #calculate total person
@@ -489,7 +489,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
     thread3.join()
     thread2.join()
     thread1.join()
-    #thread4.join() # When everything done, release the capture
+    thread4.join() # When everything done, release the capture
 
     if simulate:
         fakeCamThread.join()
