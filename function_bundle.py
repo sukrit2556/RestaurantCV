@@ -7,6 +7,7 @@ import datetime
 from datetime import datetime, timedelta
 import random
 from ultralytics import YOLO
+import os
 
 
 import mysql.connector
@@ -19,6 +20,7 @@ list_realtime_count = []
 realtime_dimsum_found = []
 to_check = []
 fps = 0
+stop_dimsum_thread = [False for _ in range (0,6)]
 
 class videoQueue:   # for recording in thread 4
     def __init__(self):
@@ -66,10 +68,11 @@ class frame_attr():
 ######### Initialize the table point [START] #########
 with open('myconfig.yaml', 'r') as file:
     config = yaml.safe_load(file)
-    print(config)
+    #print(config)
 
         ### load a pretrained YOLOv8n model ###
     model = YOLO(config['main_model_path'])
+    save_customer_path = config['save_customer_path']
 
     ### select the source of captured frame ###
     source = config['source']
@@ -366,13 +369,15 @@ def draw_from_points(frame, list_point_all_table):
 
     return frame
 
-
 if __name__ == "__main__":
     #update_db("test", "name", "sukei", ["address = 'Highway21'", "text2 = 'suk'"])
-    table_index = 1
-    """_, result = select_db("customer_events", ["MAX(customer_ID)"], [f"tableID = {table_index+1}"])
-    print(result[0][0])"""
-    update_db("customer_events", "time_getFood", datetime.now(), 
-                      ["customer_ID = (" + f"{select_db('customer_events', ['MAX(customer_ID)'], [f'tableID = {table_index+1}'])[0]})", 
-                       f"tableID = {table_index+1}"])
+    # Define the relative path to "djangoAPP/mock_media"
 
+    path_to_save = "../" + config['save_customer_path']
+    media_directory = os.path.join(os.getcwd(), path_to_save) #This directory
+    new_folder_path = os.path.normpath(os.path.join(media_directory, "1000"))
+    os.makedirs(new_folder_path, exist_ok=True)
+    full_image_file_path = os.path.join(new_folder_path, "getFoodFrame.jpg")
+    print(full_image_file_path)
+
+    print(stop_dimsum_thread)

@@ -209,16 +209,26 @@ def check_dimsum(table_index, object_frame_in):
     y_max = frame_point[2][1]
     found = 0
     itr = 0
-    while not stop_thread:
+    print(f"inside check_dimsum {table_index}")
+    print(table_index, stop_dimsum_thread)
+    print(table_index, stop_dimsum_thread[table_index])
+    print(table_index, not stop_dimsum_thread[table_index])
+    print(table_index, not stop_thread and not stop_dimsum_thread[table_index])
+
+    while not stop_thread and not stop_dimsum_thread[table_index]:
         if not object_frame_in.is_empty():
             itr += 1
             print("check dimsum table", table_index, "ite = ", itr)
+            print("is empty?: ", object_frame_in.is_empty())
+            print("length : ", object_frame_in.get_len())
             frame_obj = object_frame_in.get_frame_obj()
             frame = frame_obj.frame
             frame_datetime = frame_obj.date_time
             cropped_frame = frame[y_min:y_max, x_min:x_max]
             results = model(source=[cropped_frame], conf=0.6, show=False, save=False, classes=[0])
+            print("got result")
             realtime_dimsum_found[table_index] = len(results[0])
+            annotated_frame = results[0].plot()
             if len(results[0]) > 0:
                 found += 1
 
@@ -228,14 +238,29 @@ def check_dimsum(table_index, object_frame_in):
             update_db("customer_events", "time_getFood", frame_datetime, 
                       ["customer_ID = (" + f"{select_db('customer_events', ['MAX(customer_ID)'], [f'tableID = {table_index+1}'])[0]})", 
                        f"tableID = {table_index+1}"])
+            
             _, result = select_db("customer_events", ["MAX(customer_ID)"], [f"tableID = {table_index+1}"])
-            print(result[0][0])
-            object_frame_in.clear_all()
+            #save to real dir
+            path_to_save = "../" + config['save_customer_path']
+            media_directory = os.path.join(os.getcwd(), path_to_save)
+            new_folder_path = os.path.normpath(os.path.join(media_directory, str(result[0][0])))
+            os.makedirs(new_folder_path, exist_ok=True)
+            full_image_file_path = os.path.join(new_folder_path, "getFoodFrame.jpg")
+
+            #save to Database
+            relative_image_file_path = os.path.normpath(os.path.join(config['save_customer_path'], str(result[0][0]), "getFoodFrame.jpg"))
+            cv2.imwrite(full_image_file_path, annotated_frame)
+
+            update_db("customer_events", "getfood_frame", relative_image_file_path, 
+                      ["customer_ID = (" + f"{select_db('customer_events', ['MAX(customer_ID)'], [f'tableID = {table_index+1}'])[0]})", 
+                       f"tableID = {table_index+1}"])
+
             break
         elif itr == 10 and found < 6:
             itr = 0
             found = 0
         time.sleep(0.1)
+    object_frame_in.clear_all()
 
 def FakeCamera():
     print("inside Fack")
@@ -457,6 +482,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
             if check_available_started and any(item == "occupied" for item in availability_cache) and len(availability_cache) > 0:
                 for i, item in enumerate(availability_cache):
                     if item == "occupied" and to_check[i] == 0:
+                        stop_dimsum_thread[i] = False
                         to_check[i] = 1
                         object2[i].add_frame_obj(blank_frame_obj)
                         thread = threading.Thread(target=check_dimsum, args=(i, object2[i]))
@@ -467,11 +493,20 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
                     elif to_check[i] == 3:
                         if check_dimsum_thread_list[i].is_alive():
                             check_dimsum_thread_list[i].join()
-                            check_dimsum_thread_list[i] = 0
-
-                    if (to_check[i] == 2 and availability_cache[i] == "unoccupied") or (to_check[i] == 3 and availability_cache[i] == "unoccupied"):
+                    
+                    if availability_cache[i] == "unoccupied":
                         to_check[i] = 0
                         realtime_dimsum_found[i] = 0
+                        print("fucking I = ", i)
+                        try:
+                            if check_dimsum_thread_list[i] != 0 and check_dimsum_thread_list[i].is_alive():
+                                stop_dimsum_thread[i] = True
+                                check_dimsum_thread_list[i].join()
+                        except Exception as e:
+                            print("error: ", e)
+                            traceback.print_exc()
+                            stop_thread = True
+
             elif check_available_started and all(item == "unoccupied" for item in availability_cache) and len(availability_cache) > 0: #reset
                 for i, item in enumerate(availability_cache):
                     to_check[i] = 0
@@ -479,7 +514,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
                     if check_dimsum_thread_list[i] != 0 and check_dimsum_thread_list[i].is_alive():
                         check_dimsum_thread_list[i].join()
 
-
+            print("check_dimsum_thread_list = ", check_dimsum_thread_list)
                     
             print("to_check: ", to_check)
             print("main - stop_thread = ", stop_thread)
