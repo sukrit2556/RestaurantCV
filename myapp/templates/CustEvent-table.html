@@ -61,7 +61,7 @@
         <!-- Custom styles for this template -->
         <link href="sidebars.css" rel="stylesheet">
       </head>
-    <title>Computer vision for restuarant | Menu</title>
+    <title>Computer vision for restaurant | Menu</title>
 </head>
 
 <body>
@@ -69,10 +69,10 @@
 
 <!-- Image and text -->
 <nav class="navbar navbar-bg py-4">
-  <a class="navbar-brand mx-3" href="menu">
+  <a class="navbar-brand mx-3">
     <div class="font-nav">
       <img src="{% static 'img/eye1.png' %}" width="30" height="30" class="d-inline-block align-top" alt="">
-      <b>Computer vision for restuarant</b>
+      <b>Computer vision for restaurant</b>
     </div>
   </a>
   <div class="mx-3">
@@ -88,7 +88,7 @@
 <div class="row">
 <div class="col-md-3">
     <div class="d-flex flex-column flex-shrink-0 p-3 bg-light" style="max-width: 100%; height: 480px;">
-        <a href="menu" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto link-dark text-decoration-none">
+        <a href="{% url 'menu' %}" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto link-dark text-decoration-none">
           <img src="{% static 'img/menu.png' %}" class="menu-bar me-2" alt="">
           <span class="fs-4 align-items-center"><b>Menu</b></span>
         </a>
@@ -96,35 +96,35 @@
         <ul class="nav nav-pills flex-column mb-auto">
 
           <li class="nav-item list-butt">
-            <a href="CustTable" class="nav-link link-dark mb-2 n" aria-current="page">
+            <a href="#" class="nav-link link-dark mb-2 n" aria-current="page">
               <img src="{% static 'img/dinner2.png' %}" class="icon-bar me-2" alt="">
               Customers Events
             </a>
           </li>
 
           <li class="list-hov">
-            <a href="EmTable" class="nav-link link-dark mb-2">
+            <a href="{% url 'EmTable' %}" class="nav-link link-dark mb-2">
               <img src="{% static 'img/rest1.png' %}" class="icon-bar me-2" alt="">
               Employees Events
             </a>
           </li>
 
           <li class="list-hov">
-            <a href="SusTable" class="nav-link link-dark mb-2">
+            <a href="{% url 'SusTable' %}" class="nav-link link-dark mb-2">
               <img src="{% static 'img/loupe1.png' %}" class="icon-bar me-2" alt="">
               Suspicious Events
             </a>
           </li>
 
           <li class="list-hov">
-            <a href="ResTable" class="nav-link link-dark mb-2">
+            <a href="{% url 'ResTable' %}" class="nav-link link-dark mb-2">
               <img src="{% static 'img/check1.png' %}" class="icon-bar me-2" alt="">
               Resolved Events
             </a>
           </li>
 
           <li class="list-hov">
-            <a href="ListTable" class="nav-link link-dark mb-2">
+            <a href="{% url 'ListTable' %}" class="nav-link link-dark mb-2">
               <img src="{% static 'img/id1.png' %}" class="icon-bar me-2" alt="">
               List of employees
             </a>
@@ -141,32 +141,32 @@
       </div>
 </div> 
 <div class="col-md-9">
-    <div class="card mt-5 align-items-start" style="width: 870px;">
+    <div class="card mt-3 align-items-center" style="width: 920px; height: 450px;">
         <div class="card-body text-center">
-            <table class="table table-hover text-nowrap mx-3" style="width: 800px;">
-                <thead>
-                  <tr>
-                    <th scope="col" style="width: 5%">#</th>
-                    <th scope="col" style="width: 20%">Event No.</th>
-                    <th scope="col" style="width: 20%">Date</th>
-                    <th scope="col" style="width: 20%">Time</th>
-                    <th scope="col" style="width: 15%">Table No.</th>
-                    <th scope="col" style="width: 20%">More</th>
-                  </tr>
-                </thead>
-                {% for customer_events in customer_events %}
-                  <tr>
-                    <th scope="row">{{ customer_events.customer_out }}</th>
-                    <td>{{ customer_events.customer_id }}</td>
-                    <td>{{ customer_events.tableid }}</td>
-                    <td>{{ customer_events.customer_amount }}</td>
-                    <td>
-                      <img src="{{ customer_events.captured_video.url }}">
-                    </td>
-                    <td><a href="CustDetail/{{ customer_events.customer_id }}" class="link-d">Details</a></td>
-                  </tr>
-                {% endfor %}
-            </table>
+            <div style="max-height: 420px; overflow-y: auto; ">
+                <table class="table table-hover text-nowrap mx-3" style="width: 850px;">
+                    <thead>
+                        <tr>
+                            <th scope="col" style="width: 10%">Event No.</th>
+                            <th scope="col" style="width: 20%">Customer ID</th>
+                            <th scope="col" style="width: 25%">Date/Time</th>
+                            <th scope="col" style="width: 20%">Table No.</th>
+                            <th scope="col" style="width: 20%">More</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for customer_event in customer_events %}
+                        <tr>
+                            <td>{{ customer_event.EventNo }}</td>
+                            <td>{{ customer_event.customer_id }}</td>
+                            <td>{{ customer_event.customer_in }}</td>
+                            <td>{{ customer_event.tableid }}</td>
+                            <td><a href="/menu/CustTable/CustDetail/{{ customer_event.customer_id }}" class="link-d">Details</a></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
