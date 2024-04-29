@@ -74,7 +74,7 @@ def calculate_real_people_total():
                         #UPDATE customer_events SET customer_amount = %s WHERE 
                         #customer_IN = (SELECT MAX(customer_IN) from customer_events WHERE tableID = %s)
                         update_db(table_name, "customer_amount", list_total_count[i], 
-                                ["customer_ID = (" + f"{select_db('customer_events', ['MAX(customer_ID)'], [f'tableID = {i+1}'])[0]})",
+                                ["created_datetime = (" + f"{select_db('customer_events', ['MAX(created_datetime)'], [f'tableID = {i+1}'])[0]})",
                                 f"tableID = {i+1}"])
                         
                 else: # have no sampling data
@@ -144,7 +144,7 @@ def check_available():
                     availability.append("unoccupied")
                     if len(availability_cache) != 0 and availability_cache[i] == "occupied":
                         update_db(table_name, "customer_OUT", present_datetime, 
-                                  ["customer_ID = (" + f"{select_db('customer_events', ['MAX(customer_ID)'], [f'tableID = {i+1}'])[0]})",
+                                  ["created_datetime = (" + f"{select_db('customer_events', ['MAX(created_datetime)'], [f'tableID = {i+1}'])[0]})",
                                    f"tableID = {i+1}"])
             print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
             print(availability)
@@ -241,7 +241,7 @@ def check_dimsum(table_index, object_frame_in):
         if itr == 10 and found >= 6:
             to_check[table_index] = 3
             update_db("customer_events", "time_getFood", frame_datetime, 
-                      ["customer_ID = (" + f"{select_db('customer_events', ['MAX(customer_ID)'], [f'tableID = {table_index+1}'])[0]})", 
+                      ["created_datetime = (" + f"{select_db('customer_events', ['MAX(created_datetime)'], [f'tableID = {table_index+1}'])[0]})", 
                        f"tableID = {table_index+1}"])
             
             add_jpg_media(table_index, "getFoodFrame.jpg", annotated_frame)
