@@ -2,7 +2,8 @@ datetime: 2023-03-12T09:57:38 #format: 2023-03-12T09:57:38 or now
 
 main_model_path: "weights/yolov8l.pt"
 dimsum_model_path: "205trainset_400epoch_model_S.pt"
-save_customer_path: "/djangoAPP/mock_media"
+save_customer_path_parent: "/djangoAPP"
+save_customer_path_child: "/mock_media"
 
 source: video_frame
 frame_skip: 1

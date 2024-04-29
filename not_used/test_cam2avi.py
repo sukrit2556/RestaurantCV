@@ -24,9 +24,13 @@ size = (frame_width, frame_height)
 # Below VideoWriter object will create 
 # a frame of above defined The output 
 # is stored in 'filename.avi' file. 
-result = cv2.VideoWriter('result_video/filename.avi', 
-						cv2.VideoWriter_fourcc(*'MJPG'), 
+result = cv2.VideoWriter('result_video/filename.mp4', 
+						cv2.VideoWriter_fourcc(*'H264'), 
 						30, size) 
+
+"""result = cv2.VideoWriter('result_video/filename.avi', 
+						cv2.VideoWriter_fourcc(*'MJPG'), 
+						30, size) """
 	
 while(True): 
 	ret, frame = video.read() 

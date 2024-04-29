@@ -239,21 +239,7 @@ def check_dimsum(table_index, object_frame_in):
                       ["customer_ID = (" + f"{select_db('customer_events', ['MAX(customer_ID)'], [f'tableID = {table_index+1}'])[0]})", 
                        f"tableID = {table_index+1}"])
             
-            _, result = select_db("customer_events", ["MAX(customer_ID)"], [f"tableID = {table_index+1}"])
-            #save to real dir
-            path_to_save = "../" + config['save_customer_path']
-            media_directory = os.path.join(os.getcwd(), path_to_save)
-            new_folder_path = os.path.normpath(os.path.join(media_directory, str(result[0][0])))
-            os.makedirs(new_folder_path, exist_ok=True)
-            full_image_file_path = os.path.join(new_folder_path, "getFoodFrame.jpg")
-
-            #save to Database
-            relative_image_file_path = os.path.normpath(os.path.join(config['save_customer_path'], str(result[0][0]), "getFoodFrame.jpg"))
-            cv2.imwrite(full_image_file_path, annotated_frame)
-
-            update_db("customer_events", "getfood_frame", relative_image_file_path, 
-                      ["customer_ID = (" + f"{select_db('customer_events', ['MAX(customer_ID)'], [f'tableID = {table_index+1}'])[0]})", 
-                       f"tableID = {table_index+1}"])
+            add_jpg_media(table_index, "getFoodFrame.jpg", annotated_frame)
 
             break
         elif itr == 10 and found < 6:
@@ -301,11 +287,9 @@ def FakeCamera():
     logging.debug('[FakeCamera] Ending')
     simulate_status = False
 
-# Create and start the thread
-run_event = threading.Event()
-run_event.set()
+def record_customer_activities():
 
-
+    pass
 ####################### THREADING PROCESS {END} #######################
 ####################### THREADING PROCESS {END} #######################
 
@@ -497,7 +481,6 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
                     if availability_cache[i] == "unoccupied":
                         to_check[i] = 0
                         realtime_dimsum_found[i] = 0
-                        print("fucking I = ", i)
                         try:
                             if check_dimsum_thread_list[i] != 0 and check_dimsum_thread_list[i].is_alive():
                                 stop_dimsum_thread[i] = True
@@ -512,6 +495,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
                     to_check[i] = 0
                     realtime_dimsum_found[i] = 0
                     if check_dimsum_thread_list[i] != 0 and check_dimsum_thread_list[i].is_alive():
+                        stop_dimsum_thread[i] = True
                         check_dimsum_thread_list[i].join()
 
             print("check_dimsum_thread_list = ", check_dimsum_thread_list)
