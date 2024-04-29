@@ -21,6 +21,7 @@ realtime_dimsum_found = []
 to_check = []
 fps = 0
 stop_dimsum_thread = [False for _ in range (0,6)]
+blank_frame_cache = None
 
 class videoQueue:   # for recording in thread 4
     def __init__(self):
@@ -133,6 +134,24 @@ for i in range (len(table_points)):
     obj2 = videoQueue()
     object2.append(obj2)
     check_dimsum_thread_list.append(0)
+
+plotted_points = []
+record_width_height = []
+for key, value in  config['table_coord_for_recording'].items():
+    top_left = [value[0][0], value[0][1]]
+    top_right = [value[1][0], value[0][1]]
+    bottom_right = [value[1][0], value[1][1]]
+    bottom_left = [value[0][0], value[1][1]]
+    full_shape = [top_left, top_right, bottom_right, bottom_left]
+    width = value[1][0] - value[0][0]
+    height = value[1][1] - value[0][1]
+    print("(width, height = )", (width, height))
+    record_width_height.append((width, height))
+    plotted_points.append(full_shape)
+
+plotted_points_recording = np.array(plotted_points, dtype=np.int32)
+
+print(record_width_height[0])
 
 
 
@@ -325,12 +344,12 @@ def delete_data_db(table_name, condition_list):
     mycursor.close()
     mydb.close()
 
-def select_db(table_name, field_name, where_condition):
+def select_db(table_name, field_name:list, where_condition:list):
     mydb = connect_db()
     mycursor = mydb.cursor()
 
     formated_field_name = ', '.join(['{}'.format(field_names) for field_names in field_name])
-    formated_condition = ', '.join(['{}'.format(where_conditions) for where_conditions in where_condition])
+    formated_condition = ' AND '.join(['{}'.format(where_conditions) for where_conditions in where_condition])
     # Construct the SQL query string with placeholders
     sql = f"SELECT {formated_field_name} from {table_name} WHERE {formated_condition}"
     print("generated sql = ", sql)
@@ -338,9 +357,6 @@ def select_db(table_name, field_name, where_condition):
     mycursor.execute(sql)
 
     myresult = mycursor.fetchall()
-
-    for result in myresult:
-        print(result)
     
     mycursor.close()
     mydb.close()
@@ -361,10 +377,10 @@ def do_something():
 
     print(some_list)
 
-def draw_from_points(frame, list_point_all_table):
+def draw_from_points(frame, list_point_all_table, color:tuple):
     ## draw and put text for each table
     for table_no, pts in enumerate(list_point_all_table):
-        cv2.polylines(frame, [pts], isClosed=True, color=(255, 0, 0), thickness=2)
+        cv2.polylines(frame, [pts], isClosed=True, color=color, thickness=2)
 
     return frame
 
@@ -383,9 +399,36 @@ def add_jpg_media(table_id, filename, media_to_add):
     update_db("customer_events", "getfood_frame", relative_image_file_path, 
                       ["customer_ID = (" + f"{select_db('customer_events', ['MAX(customer_ID)'], [f'tableID = {table_id+1}'])[0]})", 
                        f"tableID = {table_id+1}"])
+def get_media_abs_path(customerID, filename):
+    path_to_save = ".." + config['save_customer_path_parent'] + config['save_customer_path_child']
+    media_directory = os.path.join(os.getcwd(), path_to_save)
+    new_folder_path = os.path.normpath(os.path.join(media_directory, str(customerID)))
+    os.makedirs(new_folder_path, exist_ok=True)
+    full_image_file_path = os.path.join(new_folder_path, filename)
+    return full_image_file_path
+
+def get_media_relate_path(customerID, filename):
+    relative_image_file_path = os.path.normpath(os.path.join(config['save_customer_path_child'], str(customerID), filename))
+    return relative_image_file_path
+
+def put_text_anywhere(frame, text_to_put_list:list, start_position_x, start_position_y):
+    for text in text_to_put_list:
+        cv2.putText(frame, 
+                text,
+                (start_position_x,start_position_y),
+                font,       #font name
+                1,          #font scale
+                (0,0,255),  #font color
+                1           #font thickness
+        )
+        start_position_y += 30
 
 if __name__ == "__main__":
     #update_db("test", "name", "sukei", ["address = 'Highway21'", "text2 = 'suk'"])
     # Define the relative path to "djangoAPP/mock_media"
-
-    add_jpg_media(1, "getFoodFrame.jpg")
+    i = 0
+    print(plotted_points_recording)
+    y_min, y_max = plotted_points_recording[i][0][1], plotted_points_recording[i][2][1]
+    x_min, x_max = plotted_points_recording[i][0][0], plotted_points_recording[i][2][0]
+    print(y_min, y_max)
+    print(x_min, x_max)

@@ -17,6 +17,8 @@ live_frame:
   source: live_frame
   url: 0
 
+save_vid_period: 1
+
 table_coordinate:
   pts1:
     - [90, 245]
@@ -86,3 +88,23 @@ table_crop_coord:
     - [1911, 307]
     - [1911, 452]
     - [1709, 452]
+
+table_coord_for_recording:
+  pts1:
+    - [41, 126]
+    - [456, 429]
+  pts2:
+    - [134, 286]
+    - [718, 721]
+  pts3:
+    - [463, 0]
+    - [759, 189]
+  pts4:
+    - [683, 0]
+    - [1093, 255]
+  pts5:
+    - [993, 0]
+    - [1598, 509]
+  pts6:
+    - [1543, 127]
+    - [1920, 666]

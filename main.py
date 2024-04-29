@@ -121,9 +121,14 @@ def check_available():
                         table_status[table_no] += 1
                         print("itr, itr1: ", itr, itr1)
                         print(present_datetime)
+                    
+                    if stop_thread:
+                        break
                 while present_datetime < target_time and not stop_thread:
                     time.sleep(1)
-                
+
+                if stop_thread:
+                    break
 
             print("table_status", table_status)
 
@@ -287,9 +292,75 @@ def FakeCamera():
     logging.debug('[FakeCamera] Ending')
     simulate_status = False
 
-def record_customer_activities():
+def record_customer_activities(): #must start after check_available started only
+    global stop_thread, present_datetime, plotted_points_recording, end_recording, availability_cache, blank_frame_cache
+    record_status = [0 for _ in range (len(table_points))]
+    record_object = [None for _ in range (len(table_points))]
+    abs_path = [None for _ in range (len(table_points))]
+    relate_path = [None for _ in range (len(table_points))]
+    while not stop_thread and not end_recording:
+        #before doing anything specify sleep time and copy frame first
+        target_time = present_datetime + timedelta(seconds=4)
 
-    pass
+        for i in range (len(table_points)):
+            if availability_cache[i] == "occupied":
+                if record_status[i] == 0:
+                    #select id from customer_event where created_datetime = (max(created_datetim) from table=i+1) and table = i+1
+                    _, customerID = select_db("customer_events", ["customer_ID"], 
+                                              ["created_datetime = (" + f"{select_db('customer_events', ['MAX(created_datetime)'], [f'tableID = {i+1}'])[0]})", 
+                                               f"tableID = {i+1}"])
+                    image_full_file_path = get_media_abs_path(customerID[0][0], "wrapped_up.mp4")
+                    abs_path[i] = image_full_file_path      #save absolute path dir to video to list
+                    image_relate_file_path = get_media_relate_path(customerID[0][0], "wrapped_up.mp4")
+                    relate_path[i] = image_relate_file_path
+                    
+                    record_status[i] = 1
+
+                    #start recording & initialize the video header
+                    result = cv2.VideoWriter(image_full_file_path, 
+						cv2.VideoWriter_fourcc(*'H264'), 
+						1, record_width_height[i]) 
+                    record_object.append(result)
+
+                    #save filepath to database #update relative path dir of video to db
+                    update_db("customer_events", "captured_video", image_relate_file_path, 
+                      ["created_datetime = (" + f"{select_db('customer_events', ['MAX(created_datetime)'], [f'tableID = {i+1}'])[0]})", 
+                       f"tableID = {i+1}"])
+
+                if record_status[i] == 1:
+
+                    #crop frame of each table
+                    y_min, y_max = plotted_points_recording[i][0][1], plotted_points_recording[i][2][1]
+                    x_min, x_max = plotted_points_recording[i][0][0], plotted_points_recording[i][2][0]
+                    frame = blank_frame_cache.copy()
+                    cropped_frame = frame[y_min:y_max, x_min:x_max]
+
+                    #put text of time in frame
+                    put_text_anywhere(frame, [str(present_datetime)], 10, 10)
+
+                    #write frame
+                    record_object[i].write(cropped_frame) 
+
+            elif availability_cache[i] == "unoccupied":
+                if record_status[i] == 1:
+                    #clear all status and path
+                    record_status[i] = 0
+                    record_object[i] = None
+                    record_object[i] = None
+                    abs_path[i] = None
+                    relate_path[i] = None
+
+                    #end recording
+                    record_object[i].out()
+
+        # sleep for specific period time.sleep end_recording must not be true
+        while present_datetime < target_time and not stop_thread and not end_recording:
+            time.sleep(1)
+    
+    #loop every record object and use obj.out() to kill the recording in case of thread killing
+    for i in range (len(table_points)):
+        record_object[i].out()
+
 ####################### THREADING PROCESS {END} #######################
 ####################### THREADING PROCESS {END} #######################
 
@@ -298,6 +369,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
     ## delete incomplete data with no customer out time before the process
 
     global stop_thread, frame_count, fps, frame_rate, present_datetime, list_realtime_count_cache, object2, fakeCamFrame, simulate_status, end_recording
+    global blank_frame_cache
     print("fps in main = ", fps)
     ### Start reading frame ###
     if not simulate and  not cap.isOpened():
@@ -329,6 +401,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
     thread2 = threading.Thread(target=check_available)
     thread3 = threading.Thread(target=now_frame_rate)
     thread4 = threading.Thread(target=combine_frame)
+    thread5 = threading.Thread(target=record_customer_activities)
     
     
 
@@ -374,6 +447,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
                 break
             blank_frame = frame_data.copy()
             blank_frame_obj = frame_attr(blank_frame, frame_time)
+            blank_frame_cache = blank_frame
 
             ### Predict on image ###
             detect_params = model.track(source=[frame_data], conf=0.4, show=False, save=False, persist=True, classes=[0], tracker="bytetrack.yaml")
@@ -427,7 +501,8 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
             
             ### draw table area ###
             draw_table_point(frame_data, availability_cache)
-            draw_from_points(frame_data, table_crop_points)
+            draw_from_points(frame_data, table_crop_points, (255, 0, 0))
+            draw_from_points(frame_data, plotted_points_recording, (0, 255, 255))
 
             
             # put text on the bottom right bottom
