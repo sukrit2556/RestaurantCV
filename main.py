@@ -11,6 +11,7 @@ import sys
 
 
 frame_count = 0
+total_frame_count = 0
 frame_rate = 0
 stop_thread = False
 check_available_started = False
@@ -369,6 +370,9 @@ def record_customer_activities(): #must start after check_available started only
         traceback.print_exc()
         stop_thread = True
 
+def determine_human_type():
+    pass
+
 ####################### THREADING PROCESS {END} #######################
 ####################### THREADING PROCESS {END} #######################
 
@@ -377,7 +381,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
     ## delete incomplete data with no customer out time before the process
 
     global stop_thread, frame_count, fps, frame_rate, present_datetime, list_realtime_count_cache, object2, fakeCamFrame, simulate_status, end_recording
-    global blank_frame_cache
+    global blank_frame_cache, total_frame_count
     print("fps in main = ", fps)
     ### Start reading frame ###
     if not simulate and  not cap.isOpened():
@@ -386,7 +390,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
     elif simulate and source_platform == "video_frame":
 
         # Create a fake camera thread that reads the video in "real-time"
-        if frame_count == 0:
+        if total_frame_count == 0:
             fakeCamThread = threading.Thread(target=FakeCamera)
             fakeCamThread.start()
 
@@ -423,7 +427,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
             present_datetime = datetime.now()
             ret, frame = simulate_status, fakeCamFrame.copy()
             """frame = cv2.putText(frame, 
-                    "frame " + str(frame_count),
+                    "frame " + str(total_frame_count),
                     (500, 650),
                     cv2.FONT_HERSHEY_COMPLEX,       #font name
                     1,          #font scale
@@ -444,15 +448,16 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
         frame_time = frame_obj.date_time
         
         # Frame counting
-        frame_count += 1
+        total_frame_count += 1
 
         ### Process the frame skipped ###
-        if frame_count == 1 or (frame_count) % frame_skip == 0:
+        if total_frame_count == 1 or (total_frame_count) % frame_skip == 0:
             if not ret:
                 print("Can't receive frame (stream end?). Exiting ...")
                 stop_thread = True
                 end_recording = True
                 break
+            frame_count += 1
             blank_frame = frame_data.copy()
             blank_frame_obj = frame_attr(blank_frame, frame_time)
             blank_frame_cache = blank_frame
@@ -490,32 +495,64 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
                     
                     cv2.circle(frame_data, (horizon_center, vertical_center), 10, (0,0,255), -1)
 
-                    count_table_people(horizon_center, vertical_center)
+                    id = int(boxes[i].id.cpu().numpy()[0])
+
+                    #if human dict don't have this id
+                    if not id in human_dict:
+                        probability_is_customer = 0
+                        first_found_frame = frame_count
+                        latest_found_frame = frame_count
+                        human_dict.update({id: ["unknown", first_found_frame, latest_found_frame, probability_is_customer]})
+
+                    is_customer = count_table_people(horizon_center, vertical_center)
+
+                    #if person is customer
+                    if is_customer:
+                        data = human_dict.get(id)
+                        probability_is_customer = data[3]
+                        found_amount = (data[2] - data[1]) + 1
+                        #edit the prob
+                        probability_is_customer = ((probability_is_customer * found_amount) + 1) / (found_amount + 1)
+                        #update latest_found_frame and update dict
+                        latest_found_frame = frame_count
+                        data[2] = latest_found_frame
+                        data[3] = probability_is_customer
+                        human_dict.update({id: data})
+
+                    if human_dict.get(id)[3] > 0.5 and human_dict.get(id)[0] == "unknown":
+                        data = human_dict.get(id)
+                        data[0] = "customer"
+                        human_dict.update({id: data})
+                    elif human_dict.get(id)[3] < 0.5 and human_dict.get(id)[0] == "customer":
+                        data = human_dict.get(id)
+                        data[0] = "unknown"
+                        human_dict.update({id: data})
 
                     # Display class name and confidence (only used in track mode)
                     try:
                         id = int(boxes[i].id.cpu().numpy()[0])
+                        cv2.rectangle(frame_data, (int(bb[0]), int(bb[1])), (int(bb[2]), int(bb[1]+30)), detection_colors[int(clsID)], -1) 
                         cv2.putText(
                             frame_data,
-                            class_list[int(clsID)] + " " + str(id) + " " + str(round(conf, 3)) + "%",
-                            (int(bb[0]), int(bb[1]) - 10),
+                            class_list[int(clsID)] + " " + str(id) + " " + str(human_dict.get(id)),
+                            (int(bb[0]), int(bb[1]) + 25),
                             font,
                             1,
                             (255, 255, 255),
-                            2,
+                            1,
                         )
                     except:
                         pass
             
             ### draw table area ###
             draw_table_point(frame_data, availability_cache)
-            draw_from_points(frame_data, table_crop_points, (255, 0, 0))
-            draw_from_points(frame_data, plotted_points_recording, (0, 255, 255))
+            #draw_from_points(frame_data, table_crop_points, (255, 0, 0))
+            #draw_from_points(frame_data, plotted_points_recording, (0, 255, 255))
 
             
             # put text on the bottom right bottom
             text_to_put_list = []
-            text_to_put_list.append("frame " + str(frame_count) + " | " + str(frame_rate) + " Frame/s")
+            text_to_put_list.append("frame " + str(frame_count) + " | " + str(frame_rate) + " Frame/s | " + "totalframe " + str(total_frame_count))
             text_to_put_list.append(str(len(detect_params[0])) + " " + "person")
             text_to_put_list.append("realtime: " + str(list_realtime_count))
             text_to_put_list.append("total: " + str(list_total_count_cache))
@@ -586,6 +623,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
                     
             print("to_check: ", to_check)
             print("main - stop_thread = ", stop_thread)
+            print("dict = ", human_dict)
             if cv2.waitKey(1) == ord("q"):
                 stop_thread = True
                 break

@@ -22,6 +22,7 @@ to_check = []
 fps = 0
 stop_dimsum_thread = [False for _ in range (0,6)]
 blank_frame_cache = None
+human_dict = {}
 
 class videoQueue:   # for recording in thread 4
     def __init__(self):
@@ -244,6 +245,8 @@ def count_table_people(horizon_center, vertical_center):
         edges = list(zip(pts, pts[1:] + pts[:1]))
         if is_inside(edges, horizon_center, vertical_center):
             list_realtime_count[table_no] += 1
+            return True
+    return False
 
 
 def reset_people_count():
