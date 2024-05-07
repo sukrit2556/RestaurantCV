@@ -66,6 +66,16 @@ class frame_attr():
         self.frame = frame
         self.date_time = date_time
 
+class person():
+    def __init__(self, person_type, frame_first_found, frame_latest_found, probToBeCustomer, dt_first_found, dt_latest_found, fixed):
+        self.person_type = person_type
+        self.frame_first_found = frame_first_found
+        self.frame_latest_found = frame_latest_found
+        self.probToBeCustomer = probToBeCustomer
+        self.dt_first_found = dt_first_found
+        self.dt_latest_found = dt_latest_found
+        self.fixed = fixed
+
 
 ######### Initialize the table point [START] #########
 with open('myconfig.yaml', 'r') as file:

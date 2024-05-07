@@ -130,7 +130,8 @@ def check_available():
 
                 if stop_thread:
                     break
-
+            if stop_thread:
+                break
             print("table_status", table_status)
 
             # determining the meaning of state
@@ -178,9 +179,9 @@ def combine_frame():
 
     size = (frame_width, frame_height) 
     # Define codec and create VideoWriter object
-    out = cv2.VideoWriter('result_video/TestOccupied.avi', 
-						cv2.VideoWriter_fourcc(*'MJPG'), 
-						8, size) 
+    out = cv2.VideoWriter('result_video/processing_record.mp4', 
+                            cv2.VideoWriter_fourcc(*'H264'), 
+                            7, size) 
 
     while not stop_thread and not end_recording:
         print("COMBINE FRAME IS STILL WORKING FINE")
@@ -469,6 +470,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
             DP = detect_params[0].cpu().numpy()
             #print(DP.boxes)
             #print("len", len(detect_params[0]))
+            key_contain_in_frame = []
             
             if len(DP) != 0:
                 for i in range(len(detect_params[0])):
@@ -478,14 +480,6 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
                     clsID = box.cls.cpu().numpy()[0]
                     conf = box.conf.cpu().numpy()[0]
                     bb = box.xyxy.cpu().numpy()[0]
-
-                    cv2.rectangle(
-                        frame_data,
-                        (int(bb[0]), int(bb[1])),
-                        (int(bb[2]), int(bb[3])),
-                        detection_colors[int(clsID)],
-                        3,
-                    )
 
                     font = cv2.FONT_HERSHEY_COMPLEX
                     
@@ -499,50 +493,129 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
 
                     #if human dict don't have this id
                     if not id in human_dict:
-                        probability_is_customer = 0
-                        first_found_frame = frame_count
-                        latest_found_frame = frame_count
-                        human_dict.update({id: ["unknown", first_found_frame, latest_found_frame, probability_is_customer]})
+                        data = person("unknown", frame_count, frame_count, 0, present_datetime, present_datetime, False)
+                        human_dict.update({id: data})
 
                     is_customer = count_table_people(horizon_center, vertical_center)
 
                     #if person is customer
                     if is_customer:
                         data = human_dict.get(id)
-                        probability_is_customer = data[3]
-                        found_amount = (data[2] - data[1]) + 1
+                        probability_is_customer = data.probToBeCustomer
+                        found_amount = (data.frame_latest_found - data.frame_first_found) + 1
                         #edit the prob
                         probability_is_customer = ((probability_is_customer * found_amount) + 1) / (found_amount + 1)
                         #update latest_found_frame and update dict
                         latest_found_frame = frame_count
-                        data[2] = latest_found_frame
-                        data[3] = probability_is_customer
+                        data.frame_latest_found = latest_found_frame
+                        data.probToBeCustomer = probability_is_customer
+                        data.dt_latest_found = present_datetime
+                        human_dict.update({id: data})
+                    elif not is_customer :
+                        data = human_dict.get(id)
+                        probability_is_customer = data.probToBeCustomer
+                        found_amount = (data.frame_latest_found - data.frame_first_found) + 1
+                        #edit the prob
+                        probability_is_customer = (probability_is_customer * found_amount) / (found_amount + 1)
+                        #update latest_found_frame and update dict
+                        if probability_is_customer < 0.1:
+                            probability_is_customer = 0
+                        latest_found_frame = frame_count
+                        data.frame_latest_found = latest_found_frame
+                        data.probToBeCustomer = probability_is_customer
+                        data.dt_latest_found = present_datetime
                         human_dict.update({id: data})
 
-                    if human_dict.get(id)[3] > 0.5 and human_dict.get(id)[0] == "unknown":
+                    if (human_dict.get(id).probToBeCustomer > 0.5 and human_dict.get(id).person_type == "unknown"):
                         data = human_dict.get(id)
-                        data[0] = "customer"
+                        data.person_type = "customer"
                         human_dict.update({id: data})
-                    elif human_dict.get(id)[3] < 0.5 and human_dict.get(id)[0] == "customer":
+                    elif (human_dict.get(id).probToBeCustomer < 0.5 and human_dict.get(id).person_type == "customer"):
                         data = human_dict.get(id)
-                        data[0] = "unknown"
+                        data.person_type = "unknown"
                         human_dict.update({id: data})
+                    
+
+                    print(f"dt_latest_found = {human_dict.get(id).dt_latest_found} dt_first_found = {human_dict.get(id).dt_first_found}")
+                    print(f"total = {(human_dict.get(id).dt_latest_found - human_dict.get(id).dt_first_found).total_seconds()}")
+
+                    #fix it
+                    if (human_dict.get(id).probToBeCustomer > 0.5 and 
+                          human_dict.get(id).person_type == "customer" and 
+                          (human_dict.get(id).dt_latest_found - human_dict.get(id).dt_first_found).total_seconds() > 5):
+                        data = human_dict.get(id)
+                        data.person_type = "customer"
+                        data.fixed = True
+                        human_dict.update({id: data})
+
+                    key_contain_in_frame.append(id)
 
                     # Display class name and confidence (only used in track mode)
                     try:
                         id = int(boxes[i].id.cpu().numpy()[0])
-                        cv2.rectangle(frame_data, (int(bb[0]), int(bb[1])), (int(bb[2]), int(bb[1]+30)), detection_colors[int(clsID)], -1) 
+                        cv2.rectangle(
+                            frame_data,
+                            (int(bb[0]), int(bb[1])),
+                            (int(bb[2]), int(bb[3])),
+                            detection_colors[int(0 if human_dict.get(id).person_type == "customer" else 1)],
+                            3,
+                        )
+                        cv2.rectangle(frame_data, (int(bb[0]), int(bb[1])), (int(bb[2]), int(bb[1]+30)), detection_colors[int(0 if human_dict.get(id).person_type == "customer" else 1)], -1) 
                         cv2.putText(
                             frame_data,
-                            class_list[int(clsID)] + " " + str(id) + " " + str(human_dict.get(id)),
+                            class_list[int(clsID)] + " " + str(id),
                             (int(bb[0]), int(bb[1]) + 25),
                             font,
                             1,
                             (255, 255, 255),
                             1,
                         )
-                    except:
-                        pass
+                        cv2.putText(
+                            frame_data,
+                            str(human_dict.get(id).person_type) + " " + "{:.2f}".format(human_dict.get(id).probToBeCustomer),
+                            (int(bb[0]), int(bb[1]) + 50),
+                            font,
+                            1,
+                            (255, 255, 255),
+                            1,
+                        )
+                        """cv2.putText(
+                            frame_data,
+                            str(human_dict.get(id).dt_first_found) + " " + str(human_dict.get(id).dt_latest_found),
+                            (int(bb[0]), int(bb[1]) + 75),
+                            font,
+                            1,
+                            (255, 255, 255),
+                            1,
+                        )
+                        cv2.putText(
+                            frame_data,
+                            str(human_dict.get(id).frame_first_found)+ " " + str(human_dict.get(id).frame_latest_found),
+                            (int(bb[0]), int(bb[1]) + 100),
+                            font,
+                            1,
+                            (255, 255, 255),
+                            1,
+                        )"""
+                        cv2.putText(
+                            frame_data,
+                            str(human_dict.get(id).fixed),
+                            (int(bb[0]), int(bb[1]) + 75),
+                            font,
+                            1,
+                            (255, 255, 255),
+                            1,
+                        )
+                    except Exception as e:
+                        stop_thread = True
+                        end_recording = True
+                        print("error : ", e)
+                        exit()
+
+            for key in list(human_dict.keys()):
+                # If the key is not in the list of IDs, delete it from the dictionary
+                if key not in key_contain_in_frame:
+                    del human_dict[key]
             
             ### draw table area ###
             draw_table_point(frame_data, availability_cache)
@@ -572,7 +645,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
             reset_people_count()
             
             
-            #object1.add_frame(frame) # uncomment without recording cause memory leak!
+            #object1.add_frame(frame_data) # uncomment without recording cause memory leak!
 
             if frame_count == 1:
                 thread2.start() #check availability
@@ -623,9 +696,9 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
                     
             print("to_check: ", to_check)
             print("main - stop_thread = ", stop_thread)
-            print("dict = ", human_dict)
             if cv2.waitKey(1) == ord("q"):
                 stop_thread = True
+                end_recording = True
                 break
 
     thread3.join()
