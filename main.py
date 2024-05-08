@@ -499,54 +499,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
                     is_customer = count_table_people(horizon_center, vertical_center)
 
                     #if person is customer
-                    if is_customer:
-                        data = human_dict.get(id)
-                        probability_is_customer = data.probToBeCustomer
-                        found_amount = (data.frame_latest_found - data.frame_first_found) + 1
-                        #edit the prob
-                        probability_is_customer = ((probability_is_customer * found_amount) + 1) / (found_amount + 1)
-                        #update latest_found_frame and update dict
-                        latest_found_frame = frame_count
-                        data.frame_latest_found = latest_found_frame
-                        data.probToBeCustomer = probability_is_customer
-                        data.dt_latest_found = present_datetime
-                        human_dict.update({id: data})
-                    elif not is_customer :
-                        data = human_dict.get(id)
-                        probability_is_customer = data.probToBeCustomer
-                        found_amount = (data.frame_latest_found - data.frame_first_found) + 1
-                        #edit the prob
-                        probability_is_customer = (probability_is_customer * found_amount) / (found_amount + 1)
-                        #update latest_found_frame and update dict
-                        if probability_is_customer < 0.1:
-                            probability_is_customer = 0
-                        latest_found_frame = frame_count
-                        data.frame_latest_found = latest_found_frame
-                        data.probToBeCustomer = probability_is_customer
-                        data.dt_latest_found = present_datetime
-                        human_dict.update({id: data})
-
-                    if (human_dict.get(id).probToBeCustomer > 0.5 and human_dict.get(id).person_type == "unknown"):
-                        data = human_dict.get(id)
-                        data.person_type = "customer"
-                        human_dict.update({id: data})
-                    elif (human_dict.get(id).probToBeCustomer < 0.5 and human_dict.get(id).person_type == "customer"):
-                        data = human_dict.get(id)
-                        data.person_type = "unknown"
-                        human_dict.update({id: data})
-                    
-
-                    print(f"dt_latest_found = {human_dict.get(id).dt_latest_found} dt_first_found = {human_dict.get(id).dt_first_found}")
-                    print(f"total = {(human_dict.get(id).dt_latest_found - human_dict.get(id).dt_first_found).total_seconds()}")
-
-                    #fix it
-                    if (human_dict.get(id).probToBeCustomer > 0.5 and 
-                          human_dict.get(id).person_type == "customer" and 
-                          (human_dict.get(id).dt_latest_found - human_dict.get(id).dt_first_found).total_seconds() > 5):
-                        data = human_dict.get(id)
-                        data.person_type = "customer"
-                        data.fixed = True
-                        human_dict.update({id: data})
+                    classified_unknown_customer(id, is_customer, frame_count, present_datetime)
 
                     key_contain_in_frame.append(id)
 
@@ -612,6 +565,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
                         print("error : ", e)
                         exit()
 
+            #remove key that don't have now
             for key in list(human_dict.keys()):
                 # If the key is not in the list of IDs, delete it from the dictionary
                 if key not in key_contain_in_frame:

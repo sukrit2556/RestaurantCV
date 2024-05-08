@@ -1,10 +1,11 @@
 # Packages without specific versions or index URLs
-opencv-python 
-ultralytics
-numpy
-mysql-connector-python
-PyYAML
-lapx
+opencv-python==4.7.0.72
+ultralytics==8.2.2
+numpy==1.25.2
+mysql-connector-python==8.3.0
+PyYAML==6.0.1
+lapx==0.5.5
 torch
-torchvision
 torchaudio
+torchvision
+face-recognition==1.3.0

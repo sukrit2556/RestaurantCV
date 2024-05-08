@@ -10,5 +10,4 @@ weights/*
 output.txt
 output.csv
 test.py
-.venv
-.venv_no_CUDA
+.*
