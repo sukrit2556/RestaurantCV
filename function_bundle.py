@@ -456,9 +456,9 @@ def put_text_anywhere(frame, text_to_put_list:list, start_position_x, start_posi
         )
         start_position_y += 30
 
-def classified_unknown_customer(id, is_customer, frame_count, present_datetime, center_coord):
+def classify_unknown_customer(shared_dict, id, is_customer, frame_count, present_datetime, center_coord):
     if is_customer:
-        data = human_dict.get(id)
+        data = shared_dict[id]
         probability_is_customer = data.probToBeCustomer
         found_amount = (data.frame_latest_found - data.frame_first_found) + 1
         #edit the prob
@@ -469,9 +469,9 @@ def classified_unknown_customer(id, is_customer, frame_count, present_datetime, 
         data.probToBeCustomer = probability_is_customer
         data.dt_latest_found = present_datetime
         data.add_pixel(center_coord)
-        human_dict.update({id: data})
+        shared_dict[id] = data
     elif not is_customer :
-        data = human_dict.get(id)
+        data = shared_dict[id]
         probability_is_customer = data.probToBeCustomer
         found_amount = (data.frame_latest_found - data.frame_first_found) + 1
         #edit the prob
@@ -484,29 +484,29 @@ def classified_unknown_customer(id, is_customer, frame_count, present_datetime, 
         data.probToBeCustomer = probability_is_customer
         data.dt_latest_found = present_datetime
         data.add_pixel(center_coord)
-        human_dict.update({id: data})
+        shared_dict[id] = data
 
-    if (human_dict.get(id).probToBeCustomer > 0.5 and human_dict.get(id).person_type == "unknown"):
-        data = human_dict.get(id)
+    if (shared_dict[id].probToBeCustomer > 0.5 and shared_dict[id].person_type == "unknown"):
+        data = shared_dict[id]
         data.person_type = "customer"
-        human_dict.update({id: data})
-    elif (human_dict.get(id).probToBeCustomer < 0.5 and human_dict.get(id).person_type == "customer"):
-        data = human_dict.get(id)
+        shared_dict[id] = data
+    elif (shared_dict[id].probToBeCustomer < 0.5 and shared_dict[id].person_type == "customer"):
+        data = shared_dict[id]
         data.person_type = "unknown"
-        human_dict.update({id: data})
+        shared_dict[id] = data
     
 
-    #print(f"dt_latest_found = {human_dict.get(id).dt_latest_found} dt_first_found = {human_dict.get(id).dt_first_found}")
-    #print(f"total = {(human_dict.get(id).dt_latest_found - human_dict.get(id).dt_first_found).total_seconds()}")
+    #print(f"dt_latest_found = {shared_dict[id].dt_latest_found} dt_first_found = {shared_dict[id].dt_first_found}")
+    #print(f"total = {(shared_dict[id].dt_latest_found - shared_dict[id].dt_first_found).total_seconds()}")
 
     #fix it
-    if (human_dict.get(id).probToBeCustomer > 0.5 and 
-            human_dict.get(id).person_type == "customer" and 
-            (human_dict.get(id).dt_latest_found - human_dict.get(id).dt_first_found).total_seconds() > 20):
-        data = human_dict.get(id)
+    if (shared_dict[id].probToBeCustomer > 0.5 and 
+            shared_dict[id].person_type == "customer" and 
+            (shared_dict[id].dt_latest_found - shared_dict[id].dt_first_found).total_seconds() > 20):
+        data = shared_dict[id]
         data.person_type = "customer"
         data.fixed = True
-        human_dict.update({id: data})
+        shared_dict[id] = data
 
 if __name__ == "__main__":
     #update_db("test", "name", "sukei", ["address = 'Highway21'", "text2 = 'suk'"])

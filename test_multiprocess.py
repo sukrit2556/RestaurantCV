@@ -1,6 +1,7 @@
 # importing the multiprocessing module 
 import multiprocessing 
 import os 
+from encoding_known_face import *
 
 def worker1(): 
 	# printing process id 
@@ -12,6 +13,7 @@ def worker2():
 
 if __name__ == "__main__": 
 	# printing main program process id 
+	manager = multiprocessing.Manager()
 	print("ID of main process: {}".format(os.getpid())) 
 
 	# creating processes 

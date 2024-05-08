@@ -497,32 +497,32 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
                     id = int(boxes[i].id.cpu().numpy()[0])
 
                     #if human dict don't have this id
-                    if not id in human_dict:
+                    if not id in shared_dict:
                         data = person("unknown", frame_count, frame_count, 0, present_datetime, 
                                       present_datetime, False)
                         data.add_pixel(center_coordinate)
-                        human_dict.update({id: data})
+                        shared_dict[id] = data
 
                     is_customer = count_table_people(horizon_center, vertical_center)
 
                     #if person is customer
-                    classified_unknown_customer(id, is_customer, frame_count, present_datetime, (horizon_center, vertical_center),)
+                    classify_unknown_customer(shared_dict, id, is_customer, frame_count, present_datetime, (horizon_center, vertical_center),)
 
                     key_contain_in_frame.append(id)
 
                     # Display class name and confidence (only used in track mode)
                     try:
                         id = int(boxes[i].id.cpu().numpy()[0])
-                        for pt1, pt2 in human_dict.get(id).all_edge():
-                            cv2.line(frame_data, pt1, pt2, detection_colors[int(0 if human_dict.get(id).person_type == "customer" else 1)], thickness=5)
+                        for pt1, pt2 in shared_dict[id].all_edge():
+                            cv2.line(frame_data, pt1, pt2, detection_colors[int(0 if shared_dict[id].person_type == "customer" else 1)], thickness=5)
                         cv2.rectangle(
                             frame_data,
                             (int(bb[0]), int(bb[1])),
                             (int(bb[2]), int(bb[3])),
-                            detection_colors[int(0 if human_dict.get(id).person_type == "customer" else 1)],
+                            detection_colors[int(0 if shared_dict[id].person_type == "customer" else 1)],
                             3,
                         )
-                        cv2.rectangle(frame_data, (int(bb[0]), int(bb[1])), (int(bb[2]), int(bb[1]+30)), detection_colors[int(0 if human_dict.get(id).person_type == "customer" else 1)], -1) 
+                        cv2.rectangle(frame_data, (int(bb[0]), int(bb[1])), (int(bb[2]), int(bb[1]+30)), detection_colors[int(0 if shared_dict[id].person_type == "customer" else 1)], -1) 
                         cv2.putText(
                             frame_data,
                             class_list[int(clsID)] + " " + str(id),
@@ -534,7 +534,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
                         )
                         cv2.putText(
                             frame_data,
-                            str(human_dict.get(id).person_type) + " " + "{:.2f}".format(human_dict.get(id).probToBeCustomer),
+                            str(shared_dict[id].person_type) + " " + "{:.2f}".format(shared_dict[id].probToBeCustomer),
                             (int(bb[0]), int(bb[1]) + 50),
                             font,
                             1,
@@ -543,7 +543,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
                         )
                         """cv2.putText(
                             frame_data,
-                            str(human_dict.get(id).dt_first_found) + " " + str(human_dict.get(id).dt_latest_found),
+                            str(shared_dict[id].dt_first_found) + " " + str(shared_dict[id].dt_latest_found),
                             (int(bb[0]), int(bb[1]) + 75),
                             font,
                             1,
@@ -552,7 +552,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
                         )
                         cv2.putText(
                             frame_data,
-                            str(human_dict.get(id).frame_first_found)+ " " + str(human_dict.get(id).frame_latest_found),
+                            str(shared_dict[id].frame_first_found)+ " " + str(shared_dict[id].frame_latest_found),
                             (int(bb[0]), int(bb[1]) + 100),
                             font,
                             1,
@@ -561,7 +561,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
                         )"""
                         cv2.putText(
                             frame_data,
-                            str(human_dict.get(id).fixed),
+                            str(shared_dict[id].fixed),
                             (int(bb[0]), int(bb[1]) + 75),
                             font,
                             1,
@@ -575,10 +575,10 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
                         exit()
 
             #remove key that don't have now
-            for key in list(human_dict.keys()):
+            keys_to_delete = [key for key in shared_dict if key not in key_contain_in_frame]
+            for key in keys_to_delete:
                 # If the key is not in the list of IDs, delete it from the dictionary
-                if key not in key_contain_in_frame:
-                    del human_dict[key]
+                del shared_dict[key]
             
             ### draw table area ###
             draw_table_point(frame_data, availability_cache)
@@ -656,7 +656,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
                         check_dimsum_thread_list[i].join()
 
             print("check_dimsum_thread_list = ", check_dimsum_thread_list)
-                    
+            print(f"shared_dict = {shared_dict}")
             print("to_check: ", to_check)
             print("main - stop_thread = ", stop_thread)
             if cv2.waitKey(1) == ord("q"):
@@ -676,9 +676,12 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
     cap.release()
     cv2.destroyAllWindows()
 
+if __name__ == "__main__":
+    manager = multiprocessing.Manager()
+    shared_dict = manager.dict()
 
-if config['source'] == "video_frame":
-    main(config['source'], simulate, url_path, frame_skipped, start_datetime)
+    if config['source'] == "video_frame":
+        main(config['source'], simulate, url_path, frame_skipped, start_datetime)
 
-if config['source'] == "live_frame":
-    main(config['source'], False, url_path, 1, datetime.now())
+    if config['source'] == "live_frame":
+        main(config['source'], False, url_path, 1, datetime.now())
