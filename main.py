@@ -2,12 +2,14 @@ import cv2
 import numpy as np
 from ultralytics import YOLO
 from function_bundle import *
+from encoding_known_face import *
 import threading
 import traceback
 import statistics
 import queue
 import logging
 import sys
+import multiprocessing
 
 
 frame_count = 0
@@ -371,7 +373,8 @@ def record_customer_activities(): #must start after check_available started only
         traceback.print_exc()
         stop_thread = True
 
-def determine_human_type():
+def recognize_employee_face():
+    
     pass
 
 ####################### THREADING PROCESS {END} #######################
@@ -383,6 +386,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
 
     global stop_thread, frame_count, fps, frame_rate, present_datetime, list_realtime_count_cache, object2, fakeCamFrame, simulate_status, end_recording
     global blank_frame_cache, total_frame_count
+
     print("fps in main = ", fps)
     ### Start reading frame ###
     if not simulate and  not cap.isOpened():
@@ -486,26 +490,31 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
                     # show center of a person on the frame
                     horizon_center = int((int(bb[2]) + int(bb[0]))/2)
                     vertical_center = int((int(bb[3]) + int(bb[1]))/2)
+                    center_coordinate = (horizon_center, vertical_center)
                     
-                    cv2.circle(frame_data, (horizon_center, vertical_center), 10, (0,0,255), -1)
+                    #cv2.circle(frame_data, (horizon_center, vertical_center), 10, (0,0,255), -1)
 
                     id = int(boxes[i].id.cpu().numpy()[0])
 
                     #if human dict don't have this id
                     if not id in human_dict:
-                        data = person("unknown", frame_count, frame_count, 0, present_datetime, present_datetime, False)
+                        data = person("unknown", frame_count, frame_count, 0, present_datetime, 
+                                      present_datetime, False)
+                        data.add_pixel(center_coordinate)
                         human_dict.update({id: data})
 
                     is_customer = count_table_people(horizon_center, vertical_center)
 
                     #if person is customer
-                    classified_unknown_customer(id, is_customer, frame_count, present_datetime)
+                    classified_unknown_customer(id, is_customer, frame_count, present_datetime, (horizon_center, vertical_center),)
 
                     key_contain_in_frame.append(id)
 
                     # Display class name and confidence (only used in track mode)
                     try:
                         id = int(boxes[i].id.cpu().numpy()[0])
+                        for pt1, pt2 in human_dict.get(id).all_edge():
+                            cv2.line(frame_data, pt1, pt2, detection_colors[int(0 if human_dict.get(id).person_type == "customer" else 1)], thickness=5)
                         cv2.rectangle(
                             frame_data,
                             (int(bb[0]), int(bb[1])),

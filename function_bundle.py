@@ -75,7 +75,27 @@ class person():
         self.dt_first_found = dt_first_found
         self.dt_latest_found = dt_latest_found
         self.fixed = fixed
+        self.pixel_list = []
 
+    def add_pixel(self, coordinate:tuple):
+        """
+        add pixel to add trace of walking
+        arg = coordinate in (x, y)
+        return nothing
+        """
+        if len(self.pixel_list) <= 20:
+            self.pixel_list.append(coordinate)
+        else:
+            self.pixel_list.pop(0)
+            self.pixel_list.append(coordinate)
+
+    def all_edge(self):
+        edge_list = []
+        for i in range (len(self.pixel_list) - 1):
+            point1 = self.pixel_list[i]
+            point2 = self.pixel_list[i+1]
+            edge_list.append([point1, point2])
+        return edge_list
 
 ######### Initialize the table point [START] #########
 with open('myconfig.yaml', 'r') as file:
@@ -436,7 +456,7 @@ def put_text_anywhere(frame, text_to_put_list:list, start_position_x, start_posi
         )
         start_position_y += 30
 
-def classified_unknown_customer(id, is_customer, frame_count, present_datetime):
+def classified_unknown_customer(id, is_customer, frame_count, present_datetime, center_coord):
     if is_customer:
         data = human_dict.get(id)
         probability_is_customer = data.probToBeCustomer
@@ -448,6 +468,7 @@ def classified_unknown_customer(id, is_customer, frame_count, present_datetime):
         data.frame_latest_found = latest_found_frame
         data.probToBeCustomer = probability_is_customer
         data.dt_latest_found = present_datetime
+        data.add_pixel(center_coord)
         human_dict.update({id: data})
     elif not is_customer :
         data = human_dict.get(id)
@@ -462,6 +483,7 @@ def classified_unknown_customer(id, is_customer, frame_count, present_datetime):
         data.frame_latest_found = latest_found_frame
         data.probToBeCustomer = probability_is_customer
         data.dt_latest_found = present_datetime
+        data.add_pixel(center_coord)
         human_dict.update({id: data})
 
     if (human_dict.get(id).probToBeCustomer > 0.5 and human_dict.get(id).person_type == "unknown"):
@@ -474,13 +496,13 @@ def classified_unknown_customer(id, is_customer, frame_count, present_datetime):
         human_dict.update({id: data})
     
 
-    print(f"dt_latest_found = {human_dict.get(id).dt_latest_found} dt_first_found = {human_dict.get(id).dt_first_found}")
-    print(f"total = {(human_dict.get(id).dt_latest_found - human_dict.get(id).dt_first_found).total_seconds()}")
+    #print(f"dt_latest_found = {human_dict.get(id).dt_latest_found} dt_first_found = {human_dict.get(id).dt_first_found}")
+    #print(f"total = {(human_dict.get(id).dt_latest_found - human_dict.get(id).dt_first_found).total_seconds()}")
 
     #fix it
     if (human_dict.get(id).probToBeCustomer > 0.5 and 
             human_dict.get(id).person_type == "customer" and 
-            (human_dict.get(id).dt_latest_found - human_dict.get(id).dt_first_found).total_seconds() > 5):
+            (human_dict.get(id).dt_latest_found - human_dict.get(id).dt_first_found).total_seconds() > 20):
         data = human_dict.get(id)
         data.person_type = "customer"
         data.fixed = True
