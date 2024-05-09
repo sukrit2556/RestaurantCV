@@ -1,7 +1,8 @@
 # importing the multiprocessing module 
 import multiprocessing 
 import os 
-from encoding_known_face import *
+if __name__ == "__main__":
+	from encoding_known_face import *
 
 def worker1(): 
 	# printing process id 
@@ -11,6 +12,8 @@ def worker2():
 	# printing process id 
 	print("ID of process running worker2: {}".format(os.getpid())) 
 
+pid = os.getpid()
+print("Process ID:", pid)
 if __name__ == "__main__": 
 	# printing main program process id 
 	manager = multiprocessing.Manager()

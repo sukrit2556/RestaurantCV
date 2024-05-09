@@ -1,8 +1,9 @@
 import cv2
 import numpy as np
 from ultralytics import YOLO
-from function_bundle import *
-from encoding_known_face import *
+if __name__ == "__main__":
+    from function_bundle import *
+    from encoding_known_face import *
 import threading
 import traceback
 import statistics
@@ -10,6 +11,7 @@ import queue
 import logging
 import sys
 import multiprocessing
+import os
 
 
 frame_count = 0
@@ -25,8 +27,7 @@ check_dimsum_started = False
 fakeCamFrame = None
 simulate_status = None
 
-#### Initialize the color randomizer for detected box ####
-detection_colors, class_list = color_selector()
+
 
 ####################### THREADING PROCESS {BEGIN} #######################
 def calculate_real_people_total():
@@ -675,7 +676,8 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
 
     cap.release()
     cv2.destroyAllWindows()
-
+pid = os.getpid()
+print("Process ID:", pid)
 if __name__ == "__main__":
     manager = multiprocessing.Manager()
     shared_dict = manager.dict()

@@ -205,6 +205,9 @@ def color_selector():
 
     return detection_colors, class_list
 
+#### Initialize the color randomizer for detected box ####
+detection_colors, class_list = color_selector()
+
 def draw_table_point(frame, availability_cache, list_point_all_table = table_points):
     ## draw and put text for each table
     for table_no, pts in enumerate(list_point_all_table):
