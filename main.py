@@ -1,16 +1,18 @@
 import cv2
 import numpy as np
-from ultralytics import YOLO
+
 if __name__ == "__main__":
     from function_bundle import *
-    #from encoding_known_face import *
+    from ultralytics import YOLO
+    import multiprocessing
+"""if __name__ != "__main__":
+    from encoding_known_face import *"""
 import threading
 import traceback
 import statistics
 import queue
 import logging
 import sys
-import multiprocessing
 import os
 
 
@@ -350,11 +352,10 @@ def record_customer_activities(): #must start after check_available started only
         stop_thread = True
         
 def update_shared_dict():
-
+    global stop_thread
     while not stop_thread:
-        while shared_dict_update_queue.empty():
+        while shared_dict_update_queue.empty() and not stop_thread:
             time.sleep(0.1)
-
         local_dict = shared_dict_update_queue.get()
         #print(f"local dict is {local_dict}")
         # Create a set of keys to delete from the shared dictionary
@@ -368,9 +369,21 @@ def update_shared_dict():
         # Update or add keys to the shared dictionary
         shared_dict.update(local_dict)
         #print(f"shared dict after updated {shared_dict}")
+        #face_recog_queue.put(local_dict)
     print("update_shared_dict stopped")
 
 def recognize_employee_face():
+
+    #import Known_face encoding
+    #wait until update_shared_dict is started
+    #while update_shared_dict_started == false:
+        #sleep
+
+    #while not stop thread
+        #while queue to recognize is empty
+            #sleep
+        #queue.get()
+
     
     pass
 
@@ -499,14 +512,15 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
                     #if human dict don't have this id
                     if not id in local_dict:
                         data = person("unknown", frame_count, frame_count, 0, present_datetime, 
-                                      present_datetime, False)
+                                      present_datetime, False, (int(bb[0]), int(bb[1])), (int(bb[2]), int(bb[3])))
                         data.add_pixel(center_coordinate)
                         local_dict[id] = data
 
                     is_customer = count_table_people(horizon_center, vertical_center)
-
+                    #print('\033[91m' + 'to classify unknown_customer' + '\033[0m')
                     #if person is customer
-                    classify_unknown_customer(local_dict, id, is_customer, frame_count, present_datetime, (horizon_center, vertical_center),)
+                    classify_unknown_customer(local_dict, id, is_customer, frame_count, present_datetime, 
+                                              (horizon_center, vertical_center),(int(bb[0]), int(bb[1])), (int(bb[2]), int(bb[3])),)
                     
                     key_contain_in_frame.append(id)
 
@@ -563,6 +577,15 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
                             frame_data,
                             str(local_dict[id].fixed),
                             (int(bb[0]), int(bb[1]) + 75),
+                            font,
+                            1,
+                            (255, 255, 255),
+                            1,
+                        )
+                        cv2.putText(
+                            frame_data,
+                            str(local_dict[id].top_left) + " " + str(local_dict[id].bottom_right),
+                            (int(bb[0]), int(bb[1]) + 100),
                             font,
                             1,
                             (255, 255, 255),
@@ -659,27 +682,38 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
                 end_recording = True
                 break
 
-    thread3.join()
-    thread2.join()
-    thread1.join()
+    thread3.join() if thread3.is_alive() else None
+    thread2.join() if thread2.is_alive() else None
+    thread1.join()  if thread1.is_alive() else None
     #thread4.join() # When everything done, release the capture
-    thread5.join()
-    thread6.join()
+    thread5.join() if thread5.is_alive() else None
+    thread6.join() if thread6.is_alive() else None
 
     if simulate:
         fakeCamThread.join()
 
     cap.release()
     cv2.destroyAllWindows()
+    manager.shutdown()
+
+    print("main program ended")
 pid = os.getpid()
 print("Process ID:", pid)
 if __name__ == "__main__":
     manager = multiprocessing.Manager()
     shared_dict = manager.dict()
     shared_dict_update_queue = queue.Queue()
+    #face_recog_queue = multiprocessing.Queue()
 
     if config['source'] == "video_frame":
         main(config['source'], simulate, url_path, frame_skipped, start_datetime)
 
     if config['source'] == "live_frame":
         main(config['source'], False, url_path, 1, datetime.now())
+
+
+    print("ended Process ID:", pid)
+    """face_recog_queue.close()
+    face_recog_queue.join_thread()
+
+    print(face_recog_queue)"""

@@ -1,17 +1,38 @@
 import tkinter as tk
 import subprocess
+import os
 
-def run_script():
-    # Run your Python script here
-    subprocess.run(['python', 'main.py'])
+class App:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("GUI for main.py")
+        
+        self.start_button = tk.Button(self.root, text="Start", command=self.start_main)
+        self.start_button.pack(pady=10)
+        
+        self.stop_button = tk.Button(self.root, text="Stop", command=self.stop_main)
+        self.stop_button.pack(pady=10)
+        
+        self.process = None
+        
+    def start_main(self):
+        if self.process is None or self.process.poll() is not None:
+            self.process = subprocess.Popen(['python', 'main.py'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            self.read_stdout()
 
-# Create the main window
-root = tk.Tk()
-root.title("Script Runner")
+    def stop_main(self):
+        if self.process:
+            self.process.terminate()
 
-# Create a button to run the script
-button = tk.Button(root, text="Run Script", command=run_script)
-button.pack(pady=10)
-
-# Run the GUI application
-root.mainloop()
+    def read_stdout(self):
+        if self.process:
+            output = self.process.stdout.readline().decode("utf-8")
+            if output:
+                print(output.strip())
+                # Do something with the output, like displaying it in a text box or logging
+            self.root.after(100, self.read_stdout)
+        
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = App(root)
+    root.mainloop()

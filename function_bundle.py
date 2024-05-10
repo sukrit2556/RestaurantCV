@@ -67,7 +67,8 @@ class frame_attr():
         self.date_time = date_time
 
 class person():
-    def __init__(self, person_type, frame_first_found, frame_latest_found, probToBeCustomer, dt_first_found, dt_latest_found, fixed):
+    def __init__(self, person_type, frame_first_found, frame_latest_found, probToBeCustomer,
+                 dt_first_found, dt_latest_found, fixed, top_left, bottom_right):
         self.person_type = person_type
         self.frame_first_found = frame_first_found
         self.frame_latest_found = frame_latest_found
@@ -76,6 +77,8 @@ class person():
         self.dt_latest_found = dt_latest_found
         self.fixed = fixed
         self.pixel_list = []
+        self.top_left = top_left
+        self.bottom_right = bottom_right
 
     def add_pixel(self, coordinate:tuple):
         """
@@ -441,7 +444,7 @@ def put_text_anywhere(frame, text_to_put_list:list, start_position_x, start_posi
         )
         start_position_y += 30
 
-def classify_unknown_customer(people_dict, id, is_customer, frame_count, present_datetime, center_coord):
+def classify_unknown_customer(people_dict, id, is_customer, frame_count, present_datetime, center_coord, top_left, bottom_right):
 
     if is_customer:
         data = people_dict[id]
@@ -455,6 +458,8 @@ def classify_unknown_customer(people_dict, id, is_customer, frame_count, present
         data.probToBeCustomer = probability_is_customer
         data.dt_latest_found = present_datetime
         data.add_pixel(center_coord)
+        data.top_left = top_left
+        data.bottom_right = bottom_right
         people_dict[id] = data
     elif not is_customer :
         data = people_dict[id]
@@ -470,6 +475,8 @@ def classify_unknown_customer(people_dict, id, is_customer, frame_count, present
         data.probToBeCustomer = probability_is_customer
         data.dt_latest_found = present_datetime
         data.add_pixel(center_coord)
+        data.top_left = top_left
+        data.bottom_right = bottom_right
         people_dict[id] = data
 
     if (people_dict[id].probToBeCustomer > 0.5 and people_dict[id].person_type == "unknown"):
@@ -492,6 +499,17 @@ def classify_unknown_customer(people_dict, id, is_customer, frame_count, present
         data.fixed = True
         people_dict[id] = data
 
+def print_queue(queue):
+    # Create a temporary list to store the items
+    temp_list = []
+    while not queue.empty():
+        item = queue.get()
+        temp_list.append(item)
+        print("Item:", item)
+    
+    # Put the items back into the queue
+    for item in temp_list:
+        queue.put(item)
 
 
 def update_local_dict(local_dict, key_contain_in_frame):
