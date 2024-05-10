@@ -83,6 +83,7 @@ def calculate_real_people_total():
 
             while present_datetime < target_time and not stop_thread:
                 time.sleep(1)
+        print("calculate_real_people_total stopped")
 
     except Exception as e:
         print("error: ", e)
@@ -142,12 +143,13 @@ def check_available():
             availability_cache = availability.copy()
             if check_available_started == False:
                 check_available_started = True
-            
 
         except Exception as e:
             print("error: ", e)
             traceback.print_exc()
             stop_thread = True
+
+    print("check_available stopped")
 
 def now_frame_rate():
     global frame_rate, stop_thread
@@ -157,6 +159,7 @@ def now_frame_rate():
         time.sleep(second)
         frame_count_after = frame_count
         frame_rate = int((frame_count_after - frame_count_before)/second)
+    print("now_frame_rate stopped")
 
 def combine_frame():
     completed_frames = None
@@ -229,6 +232,7 @@ def check_dimsum(table_index, object_frame_in):
             found = 0
         time.sleep(0.1)
     object_frame_in.clear_all()
+    print("Check_dimsum stopped")
 
 def FakeCamera():
 
@@ -267,6 +271,7 @@ def FakeCamera():
 
     logging.debug('[FakeCamera] Ending')
     simulate_status = False
+    print("fake_camera stopped")
 
 def record_customer_activities(): #must start after check_available started only
     global stop_thread, present_datetime, plotted_points_recording, end_recording, availability_cache, blank_frame_cache
@@ -284,8 +289,7 @@ def record_customer_activities(): #must start after check_available started only
                     if record_status[i] == 0:
                         #select id from customer_event where created_datetime = (max(created_datetim) from table=i+1) and table = i+1
                         _, customerID = select_db("customer_events", ["customer_ID"], 
-                                                ["created_datetime = (" + f"{select_db('customer_events', ['MAX(created_datetime)'], [f'tableID = {i+1}'])[0]})", 
-                                                f"tableID = {i+1}"])
+                                                ["created_datetime = (" + f"{select_db('customer_events', ['MAX(created_datetime)'], [f'tableID = {i+1}'])[0]})", f"tableID = {i+1}"])
                         image_full_file_path = get_media_abs_path(customerID[0][0], "wrapped_up.mp4")
                         abs_path[i] = image_full_file_path      #save absolute path dir to video to list
                         image_relate_file_path = get_media_relate_path(customerID[0][0], "wrapped_up.mp4")
@@ -313,8 +317,7 @@ def record_customer_activities(): #must start after check_available started only
                         cropped_frame = frame[y_min:y_max, x_min:x_max]
 
                         #put text of time in frame
-                        put_text_anywhere(cropped_frame, [str(present_datetime)], 10, 40)
-
+                        cv2.putText(cropped_frame,str(present_datetime),(10,40),cv2.FONT_HERSHEY_PLAIN,1,(0,0,255),1,cv2.LINE_AA)
                         #write frame
                         record_object[i].write(cropped_frame) 
 
@@ -340,10 +343,32 @@ def record_customer_activities(): #must start after check_available started only
         for i in range (len(table_points)):
             if record_object[i] != None:
                 record_object[i].release()
+        print("record_customer_activity stopped")
     except Exception as e:
         print("error: ", e)
         traceback.print_exc()
         stop_thread = True
+        
+def update_shared_dict():
+
+    while not stop_thread:
+        while shared_dict_update_queue.empty():
+            time.sleep(0.1)
+
+        local_dict = shared_dict_update_queue.get()
+        #print(f"local dict is {local_dict}")
+        # Create a set of keys to delete from the shared dictionary
+        keys_to_delete = set(shared_dict.keys()) - set(local_dict.keys())
+        #print(f"key to delete = {keys_to_delete}")
+
+        # Delete keys from the shared dictionary
+        for key in keys_to_delete:
+            del shared_dict[key]
+
+        # Update or add keys to the shared dictionary
+        shared_dict.update(local_dict)
+        #print(f"shared dict after updated {shared_dict}")
+    print("update_shared_dict stopped")
 
 def recognize_employee_face():
     
@@ -390,6 +415,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
     thread3 = threading.Thread(target=now_frame_rate)
     thread4 = threading.Thread(target=combine_frame)
     thread5 = threading.Thread(target=record_customer_activities)
+    thread6 = threading.Thread(target=update_shared_dict)
     
     
 
@@ -549,7 +575,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
             #remove key that don't have now
             if len(key_contain_in_frame) > 0:
                 update_local_dict(local_dict, key_contain_in_frame)
-                update_shared_dict(shared_dict, local_dict)
+                shared_dict_update_queue.put(local_dict)
             
 
 
@@ -571,7 +597,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
             text_to_put_list.append("time now: " + str(frame_obj.date_time))
             text_to_put_list.append("fps: " + str(fps))
             put_text_bottom_right(frame_data, text_to_put_list)
-            
+
 
             # Display the resulting frame
             cv2.imshow("ObjectDetection", frame_data)
@@ -586,6 +612,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
                 thread2.start() #check availability
                 thread3.start()#check framerate
                 #thread4.start() #record video
+                thread6.start()
             # Terminate run when "Q" pressed
             if check_available_started and not thread1.is_alive():
                 thread1.start() #calculate total person
@@ -637,6 +664,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
     thread1.join()
     #thread4.join() # When everything done, release the capture
     thread5.join()
+    thread6.join()
 
     if simulate:
         fakeCamThread.join()
@@ -648,6 +676,7 @@ print("Process ID:", pid)
 if __name__ == "__main__":
     manager = multiprocessing.Manager()
     shared_dict = manager.dict()
+    shared_dict_update_queue = queue.Queue()
 
     if config['source'] == "video_frame":
         main(config['source'], simulate, url_path, frame_skipped, start_datetime)

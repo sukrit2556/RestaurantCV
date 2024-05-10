@@ -96,6 +96,7 @@ class person():
             point2 = self.pixel_list[i+1]
             edge_list.append([point1, point2])
         return edge_list
+    
 
 ######### Initialize the table point [START] #########
 with open('myconfig.yaml', 'r') as file:
@@ -491,17 +492,7 @@ def classify_unknown_customer(people_dict, id, is_customer, frame_count, present
         data.fixed = True
         people_dict[id] = data
 
-def update_shared_dict(shared_dict, local_dict):
-    # Create a set of keys to delete from the shared dictionary
 
-    keys_to_delete = set(shared_dict.keys()) - set(local_dict.keys())
-
-    # Delete keys from the shared dictionary
-    for key in keys_to_delete:
-        del shared_dict[key]
-
-    # Update or add keys to the shared dictionary
-    shared_dict.update(local_dict)
 
 def update_local_dict(local_dict, key_contain_in_frame):
     keys_to_delete = [key for key in local_dict if key not in key_contain_in_frame]
