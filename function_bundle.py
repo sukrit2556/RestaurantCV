@@ -100,7 +100,6 @@ class person():
 ######### Initialize the table point [START] #########
 with open('myconfig.yaml', 'r') as file:
     config = yaml.safe_load(file)
-    #print(config)
 
         ### load a pretrained YOLOv8n model ###
     model = YOLO(config['main_model_path'])
@@ -111,7 +110,6 @@ with open('myconfig.yaml', 'r') as file:
         url_path = config['video_frame']['url']
         cap = cv2.VideoCapture(url_path)
         fps = cap.get(cv2.CAP_PROP_FPS)
-        print("fps in func = ", fps)
         if config['video_frame']['simulate'] == True:
             simulate = True
         else:
@@ -176,13 +174,11 @@ for key, value in  config['table_coord_for_recording'].items():
     full_shape = [top_left, top_right, bottom_right, bottom_left]
     width = value[1][0] - value[0][0]
     height = value[1][1] - value[0][1]
-    print("(width, height = )", (width, height))
     record_width_height.append((width, height))
     plotted_points.append(full_shape)
 
 plotted_points_recording = np.array(plotted_points, dtype=np.int32)
 
-print(record_width_height[0])
 
 
 
@@ -253,7 +249,6 @@ def draw_table_point(frame, availability_cache, list_point_all_table = table_poi
 
 def show_time(frame):
     current_time = datetime.datetime.now()
-    print(current_time)
     cv2.putText(frame, 
                 str(current_time),
                 (1100,700),
@@ -399,20 +394,6 @@ def select_db(table_name, field_name:list, where_condition:list):
 
     return sql, myresult # for subquery uses
 
-def do_something():
-    some_list = []
-
-    for i in range (0, 6):
-        some_list.append([])
-    print(some_list)
-    for sublist in some_list:
-        print(sublist)
-        while len(sublist) < 100:
-            random_number = random.randint(1, 9)
-            sublist.append(random_number)
-
-    print(some_list)
-
 def draw_from_points(frame, list_point_all_table, color:tuple):
     ## draw and put text for each table
     for table_no, pts in enumerate(list_point_all_table):
@@ -459,9 +440,10 @@ def put_text_anywhere(frame, text_to_put_list:list, start_position_x, start_posi
         )
         start_position_y += 30
 
-def classify_unknown_customer(shared_dict, id, is_customer, frame_count, present_datetime, center_coord):
+def classify_unknown_customer(people_dict, id, is_customer, frame_count, present_datetime, center_coord):
+
     if is_customer:
-        data = shared_dict[id]
+        data = people_dict[id]
         probability_is_customer = data.probToBeCustomer
         found_amount = (data.frame_latest_found - data.frame_first_found) + 1
         #edit the prob
@@ -472,9 +454,9 @@ def classify_unknown_customer(shared_dict, id, is_customer, frame_count, present
         data.probToBeCustomer = probability_is_customer
         data.dt_latest_found = present_datetime
         data.add_pixel(center_coord)
-        shared_dict[id] = data
+        people_dict[id] = data
     elif not is_customer :
-        data = shared_dict[id]
+        data = people_dict[id]
         probability_is_customer = data.probToBeCustomer
         found_amount = (data.frame_latest_found - data.frame_first_found) + 1
         #edit the prob
@@ -487,29 +469,45 @@ def classify_unknown_customer(shared_dict, id, is_customer, frame_count, present
         data.probToBeCustomer = probability_is_customer
         data.dt_latest_found = present_datetime
         data.add_pixel(center_coord)
-        shared_dict[id] = data
+        people_dict[id] = data
 
-    if (shared_dict[id].probToBeCustomer > 0.5 and shared_dict[id].person_type == "unknown"):
-        data = shared_dict[id]
+    if (people_dict[id].probToBeCustomer > 0.5 and people_dict[id].person_type == "unknown"):
+        data = people_dict[id]
         data.person_type = "customer"
-        shared_dict[id] = data
-    elif (shared_dict[id].probToBeCustomer < 0.5 and shared_dict[id].person_type == "customer"):
-        data = shared_dict[id]
+        people_dict[id] = data
+    elif (people_dict[id].probToBeCustomer < 0.5 and people_dict[id].person_type == "customer"):
+        data = people_dict[id]
         data.person_type = "unknown"
-        shared_dict[id] = data
+        people_dict[id] = data
     
 
-    #print(f"dt_latest_found = {shared_dict[id].dt_latest_found} dt_first_found = {shared_dict[id].dt_first_found}")
-    #print(f"total = {(shared_dict[id].dt_latest_found - shared_dict[id].dt_first_found).total_seconds()}")
 
     #fix it
-    if (shared_dict[id].probToBeCustomer > 0.5 and 
-            shared_dict[id].person_type == "customer" and 
-            (shared_dict[id].dt_latest_found - shared_dict[id].dt_first_found).total_seconds() > 20):
-        data = shared_dict[id]
+    if (people_dict[id].probToBeCustomer > 0.5 and 
+            people_dict[id].person_type == "customer" and 
+            (people_dict[id].dt_latest_found - people_dict[id].dt_first_found).total_seconds() > 20):
+        data = people_dict[id]
         data.person_type = "customer"
         data.fixed = True
-        shared_dict[id] = data
+        people_dict[id] = data
+
+def update_shared_dict(shared_dict, local_dict):
+    # Create a set of keys to delete from the shared dictionary
+
+    keys_to_delete = set(shared_dict.keys()) - set(local_dict.keys())
+
+    # Delete keys from the shared dictionary
+    for key in keys_to_delete:
+        del shared_dict[key]
+
+    # Update or add keys to the shared dictionary
+    shared_dict.update(local_dict)
+
+def update_local_dict(local_dict, key_contain_in_frame):
+    keys_to_delete = [key for key in local_dict if key not in key_contain_in_frame]
+    for key in keys_to_delete:
+        # If the key is not in the list of IDs, delete it from the dictionary
+        del local_dict[key]
 
 if __name__ == "__main__":
     #update_db("test", "name", "sukei", ["address = 'Highway21'", "text2 = 'suk'"])

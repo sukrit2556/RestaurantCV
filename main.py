@@ -3,7 +3,7 @@ import numpy as np
 from ultralytics import YOLO
 if __name__ == "__main__":
     from function_bundle import *
-    from encoding_known_face import *
+    #from encoding_known_face import *
 import threading
 import traceback
 import statistics
@@ -42,17 +42,14 @@ def calculate_real_people_total():
 
     try:
         while not stop_thread:
-            print("________________-Get in calculate now")
             list_total_count = list_realtime_count_cache.copy()
             
-            print("sampling_from_tables", sampling_from_tables)
 
             target_time = present_datetime + timedelta(seconds=4)
 
             # operating
             for i in range (len(table_points)):
 
-                print(i)
             
                 # if occupied then keep collecting until it reaches 100 collection
                 if availability_cache[i] == "occupied" and len(sampling_from_tables[i]) < sampling_amount:
@@ -63,8 +60,6 @@ def calculate_real_people_total():
                     sampling_from_tables[i].clear()
                     
                 
-            print("helloooooooooooooooooooooooooooooooooooooooooooooooooooo")
-            print(sampling_from_tables)
 
             # determine the meaning
             for i in range (len(table_points)):
@@ -106,8 +101,6 @@ def check_available():
         itr1 = 0
         table_status = [] # 3 = occupied , 0 = unoccupied
         availability = []
-        print("check_available stop_thread = ", stop_thread)
-        print("IM INSIDE CHECKAVAILABLE IM INSIDE CHECKAVAILABLE")
 
         try:
             for table_no, _ in enumerate(table_points): #initialize list
@@ -115,16 +108,11 @@ def check_available():
             # start checking for 3 sampling time at each tables
             for i in range (0, 5):
                 target_time = present_datetime + timedelta(seconds=4)
-                print(present_datetime)
-                print(target_time)
                 itr1 += 1
-                print("check available ====================================================", i)
                 list_realtime_count = list_realtime_count_cache.copy()
                 for table_no, _ in enumerate(table_points):
                     if list_realtime_count[table_no] > 0: #occupied detected that moment
                         table_status[table_no] += 1
-                        print("itr, itr1: ", itr, itr1)
-                        print(present_datetime)
                     
                     if stop_thread:
                         break
@@ -135,7 +123,6 @@ def check_available():
                     break
             if stop_thread:
                 break
-            print("table_status", table_status)
 
             # determining the meaning of state
             for i, item in enumerate(table_status):
@@ -151,8 +138,6 @@ def check_available():
                         update_db(table_name, "customer_OUT", present_datetime, 
                                   ["created_datetime = (" + f"{select_db('customer_events', ['MAX(created_datetime)'], [f'tableID = {i+1}'])[0]})",
                                    f"tableID = {i+1}"])
-            print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
-            print(availability)
 
             availability_cache = availability.copy()
             if check_available_started == False:
@@ -187,7 +172,6 @@ def combine_frame():
                             7, size) 
 
     while not stop_thread and not end_recording:
-        print("COMBINE FRAME IS STILL WORKING FINE")
         # Iterate over each video queue to check for frames
         if completed_frames is None:  # Check if frame for this index is not yet filled
             frame = object1.get_frame()  # Get frame from video queue
@@ -196,7 +180,6 @@ def combine_frame():
                 completed_frames = frame
                 
         if frame is not None:
-            print(completed_frames)
             completed_frames = cv2.resize(completed_frames, (1920,1080))
             out.write(completed_frames)
             # Display the combined frame
@@ -204,9 +187,8 @@ def combine_frame():
             completed_frames = None
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
-        #time.sleep(0.1)
+        time.sleep(0.1)
     out.release()
-    print("out_released")
 
 def check_dimsum(table_index, object_frame_in):
     model = YOLO(config['dimsum_model_path'])
@@ -219,30 +201,20 @@ def check_dimsum(table_index, object_frame_in):
     y_max = frame_point[2][1]
     found = 0
     itr = 0
-    print(f"inside check_dimsum {table_index}")
-    print(table_index, stop_dimsum_thread)
-    print(table_index, stop_dimsum_thread[table_index])
-    print(table_index, not stop_dimsum_thread[table_index])
-    print(table_index, not stop_thread and not stop_dimsum_thread[table_index])
 
     while not stop_thread and not stop_dimsum_thread[table_index]:
         if not object_frame_in.is_empty():
             itr += 1
-            print("check dimsum table", table_index, "ite = ", itr)
-            print("is empty?: ", object_frame_in.is_empty())
-            print("length : ", object_frame_in.get_len())
             frame_obj = object_frame_in.get_frame_obj()
             frame = frame_obj.frame
             frame_datetime = frame_obj.date_time
             cropped_frame = frame[y_min:y_max, x_min:x_max]
-            results = model(source=[cropped_frame], conf=0.6, show=False, save=False, classes=[0])
-            print("got result")
+            results = model(source=[cropped_frame], conf=0.6, show=False, save=False, classes=[0], verbose=False)
             realtime_dimsum_found[table_index] = len(results[0])
             annotated_frame = results[0].plot()
             if len(results[0]) > 0:
                 found += 1
 
-        #print("table: ", table_index, "itr: ", itr, "found: ", found)
         if itr == 10 and found >= 6:
             to_check[table_index] = 3
             update_db("customer_events", "time_getFood", frame_datetime, 
@@ -259,7 +231,6 @@ def check_dimsum(table_index, object_frame_in):
     object_frame_in.clear_all()
 
 def FakeCamera():
-    print("inside Fack")
 
     global fps, simulate_status, stop_thread
     """Reads the video file at its natural rate, storing the frame in a global called 'fakeCamFrame'"""
@@ -388,7 +359,6 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
     global stop_thread, frame_count, fps, frame_rate, present_datetime, list_realtime_count_cache, object2, fakeCamFrame, simulate_status, end_recording
     global blank_frame_cache, total_frame_count
 
-    print("fps in main = ", fps)
     ### Start reading frame ###
     if not simulate and  not cap.isOpened():
         print("Cannot open camera")
@@ -469,7 +439,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
             blank_frame_cache = blank_frame
 
             ### Predict on image ###
-            detect_params = model.track(source=[frame_data], conf=0.4, show=False, save=False, persist=True, classes=[0], tracker="bytetrack.yaml")
+            detect_params = model.track(source=[frame_data], conf=0.4, show=False, save=False, persist=True, classes=[0], tracker="bytetrack.yaml", verbose=False)
 
             # Convert tensor array to numpy
             DP = detect_params[0].cpu().numpy()
@@ -477,7 +447,10 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
             #print("len", len(detect_params[0]))
             key_contain_in_frame = []
             
+            
             if len(DP) != 0:
+
+                local_dict = dict(shared_dict)
                 for i in range(len(detect_params[0])):
 
                     boxes = detect_params[0].boxes
@@ -498,32 +471,32 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
                     id = int(boxes[i].id.cpu().numpy()[0])
 
                     #if human dict don't have this id
-                    if not id in shared_dict:
+                    if not id in local_dict:
                         data = person("unknown", frame_count, frame_count, 0, present_datetime, 
                                       present_datetime, False)
                         data.add_pixel(center_coordinate)
-                        shared_dict[id] = data
+                        local_dict[id] = data
 
                     is_customer = count_table_people(horizon_center, vertical_center)
 
                     #if person is customer
-                    classify_unknown_customer(shared_dict, id, is_customer, frame_count, present_datetime, (horizon_center, vertical_center),)
-
+                    classify_unknown_customer(local_dict, id, is_customer, frame_count, present_datetime, (horizon_center, vertical_center),)
+                    
                     key_contain_in_frame.append(id)
 
                     # Display class name and confidence (only used in track mode)
                     try:
                         id = int(boxes[i].id.cpu().numpy()[0])
-                        for pt1, pt2 in shared_dict[id].all_edge():
-                            cv2.line(frame_data, pt1, pt2, detection_colors[int(0 if shared_dict[id].person_type == "customer" else 1)], thickness=5)
+                        for pt1, pt2 in local_dict[id].all_edge():
+                            cv2.line(frame_data, pt1, pt2, detection_colors[int(0 if local_dict[id].person_type == "customer" else 1)], thickness=5)
                         cv2.rectangle(
                             frame_data,
                             (int(bb[0]), int(bb[1])),
                             (int(bb[2]), int(bb[3])),
-                            detection_colors[int(0 if shared_dict[id].person_type == "customer" else 1)],
+                            detection_colors[int(0 if local_dict[id].person_type == "customer" else 1)],
                             3,
                         )
-                        cv2.rectangle(frame_data, (int(bb[0]), int(bb[1])), (int(bb[2]), int(bb[1]+30)), detection_colors[int(0 if shared_dict[id].person_type == "customer" else 1)], -1) 
+                        cv2.rectangle(frame_data, (int(bb[0]), int(bb[1])), (int(bb[2]), int(bb[1]+30)), detection_colors[int(0 if local_dict[id].person_type == "customer" else 1)], -1) 
                         cv2.putText(
                             frame_data,
                             class_list[int(clsID)] + " " + str(id),
@@ -535,7 +508,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
                         )
                         cv2.putText(
                             frame_data,
-                            str(shared_dict[id].person_type) + " " + "{:.2f}".format(shared_dict[id].probToBeCustomer),
+                            str(local_dict[id].person_type) + " " + "{:.2f}".format(local_dict[id].probToBeCustomer),
                             (int(bb[0]), int(bb[1]) + 50),
                             font,
                             1,
@@ -544,7 +517,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
                         )
                         """cv2.putText(
                             frame_data,
-                            str(shared_dict[id].dt_first_found) + " " + str(shared_dict[id].dt_latest_found),
+                            str(local_dict[id].dt_first_found) + " " + str(local_dict[id].dt_latest_found),
                             (int(bb[0]), int(bb[1]) + 75),
                             font,
                             1,
@@ -553,7 +526,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
                         )
                         cv2.putText(
                             frame_data,
-                            str(shared_dict[id].frame_first_found)+ " " + str(shared_dict[id].frame_latest_found),
+                            str(local_dict[id].frame_first_found)+ " " + str(local_dict[id].frame_latest_found),
                             (int(bb[0]), int(bb[1]) + 100),
                             font,
                             1,
@@ -562,7 +535,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
                         )"""
                         cv2.putText(
                             frame_data,
-                            str(shared_dict[id].fixed),
+                            str(local_dict[id].fixed),
                             (int(bb[0]), int(bb[1]) + 75),
                             font,
                             1,
@@ -570,17 +543,16 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
                             1,
                         )
                     except Exception as e:
+                        print("error: ", e)
+                        traceback.print_exc()
                         stop_thread = True
-                        end_recording = True
-                        print("error : ", e)
-                        exit()
-
             #remove key that don't have now
-            keys_to_delete = [key for key in shared_dict if key not in key_contain_in_frame]
-            for key in keys_to_delete:
-                # If the key is not in the list of IDs, delete it from the dictionary
-                del shared_dict[key]
+            if len(key_contain_in_frame) > 0:
+                update_local_dict(local_dict, key_contain_in_frame)
+                update_shared_dict(shared_dict, local_dict)
             
+
+
             ### draw table area ###
             draw_table_point(frame_data, availability_cache)
             #draw_from_points(frame_data, table_crop_points, (255, 0, 0))
@@ -599,7 +571,6 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
             text_to_put_list.append("time now: " + str(frame_obj.date_time))
             text_to_put_list.append("fps: " + str(fps))
             put_text_bottom_right(frame_data, text_to_put_list)
-            print("available: ", availability_cache)
             
 
             # Display the resulting frame
@@ -656,10 +627,6 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
                         stop_dimsum_thread[i] = True
                         check_dimsum_thread_list[i].join()
 
-            print("check_dimsum_thread_list = ", check_dimsum_thread_list)
-            print(f"shared_dict = {shared_dict}")
-            print("to_check: ", to_check)
-            print("main - stop_thread = ", stop_thread)
             if cv2.waitKey(1) == ord("q"):
                 stop_thread = True
                 end_recording = True
