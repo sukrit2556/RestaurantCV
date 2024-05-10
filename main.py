@@ -317,7 +317,7 @@ def record_customer_activities(): #must start after check_available started only
                         cropped_frame = frame[y_min:y_max, x_min:x_max]
 
                         #put text of time in frame
-                        cv2.putText(cropped_frame,str(present_datetime),(10,40),cv2.FONT_HERSHEY_PLAIN,1,(0,0,255),1,cv2.LINE_AA)
+                        cv2.putText(cropped_frame,str(present_datetime.strftime('%Y-%m-%d %H:%M:%S')),(10,40),cv2.FONT_HERSHEY_PLAIN,2,(0,0,255),2,cv2.LINE_AA)
                         #write frame
                         record_object[i].write(cropped_frame) 
 
