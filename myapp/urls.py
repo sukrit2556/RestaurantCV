@@ -19,4 +19,9 @@ urlpatterns = [
     path('menu/SusTable/', views.SusTable, name='SusTable'),
     path('menu/ResTable/', views.ResTable, name='ResTable'),
     path('menu/ListTable/', views.ListTable, name='ListTable'),
-]
+    path('menu/ListTable/AddEM/', views.AddEm, name='AddEm'),
+    path('menu/ListTable/EditEm/<int:id>', views.EditEm, name='EditEm'),
+    path('delete_employee/<int:employee_id>/', views.delete_employee, name='delete_employee'),
+    path('menu/ListTable/AddEM/', views.AddEm, name='AddEm'),
+     path('resolve_suspicious_event/<int:sus_id>/', views.resolve_suspicious_event, name='resolve_suspicious_event'),
+    ]

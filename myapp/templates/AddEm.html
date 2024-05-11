@@ -5,6 +5,34 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+* {
+  box-sizing: border-box;
+}
+
+#myInput {
+  width: 50%;
+  font-size: 16px;
+  border: 1px solid #ddd;
+  padding-left: 20px;
+}
+
+#myTable {
+  width: 100%;
+}
+
+#myTable th, #myTable td {
+
+}
+
+#myTable tr {
+
+}
+
+#myTable tr.header, #myTable tr:hover {
+  
+}
+</style>
     <!-- bootstrap -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
@@ -88,21 +116,21 @@
 <div class="row">
 <div class="col-md-3">
     <div class="d-flex flex-column flex-shrink-0 p-3 bg-light" style="max-width: 100%; height: 480px;">
-        <a href="{% url 'menu' %}" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto link-dark text-decoration-none">
-          <img src="{% static 'img/menu.png' %}" class="menu-bar me-2" alt="">
-          <span class="fs-4 align-items-center"><b>Menu</b></span>
-        </a>
+      <a href="{% url 'menu' %}" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto link-dark text-decoration-none">
+        <img src="{% static 'img/menu.png' %}" class="menu-bar me-2" alt="">
+        <span class="fs-4 align-items-center"><b>Menu</b></span>
+      </a>
         <hr>
         <ul class="nav nav-pills flex-column mb-auto">
 
           <li class="list-hov">
-            <a href="{% url 'CustTable' %}" class="nav-link link-dark mb-2 n" aria-current="page">
+            <a href="{% url 'CustTable' %}" class="nav-link link-dark mb-2">
               <img src="{% static 'img/dinner2.png' %}" class="icon-bar me-2" alt="">
               Customers Events
             </a>
           </li>
 
-<!--           <li class="list-hov">
+<!--          <li class="list-hov">
             <a href="{% url 'EmTable' %}" class="nav-link link-dark mb-2">
               <img src="{% static 'img/rest1.png' %}" class="icon-bar me-2" alt="">
               Employees Events
@@ -116,15 +144,15 @@
             </a>
           </li>
 
-          <li class="nav-item list-butt">
-            <a href="{% url 'ResTable' %}" class="nav-link link-dark mb-2" aria-current="page">
+          <li class="list-hov">
+            <a href="{% url 'ResTable' %}" class="nav-link link-dark mb-2">
               <img src="{% static 'img/check1.png' %}" class="icon-bar me-2" alt="">
               Resolved Events
             </a>
           </li>
 
-          <li class="list-hov">
-            <a href="{% url 'ListTable' %}" class="nav-link link-dark mb-2">
+          <li class="nav-item list-butt">
+            <a href="{% url 'ListTable' %}" class="nav-link link-dark mb-2" aria-current="page">
               <img src="{% static 'img/id1.png' %}" class="icon-bar me-2" alt="">
               List of employees
             </a>
@@ -141,62 +169,28 @@
       </div>
 </div> 
 <div class="col-md-9">
-  <div class="card mt-3 align-items-center" style="width: 920px; height: 450px;">
-    <div class="card-body text-center">
-        <div style="max-height: 420px; overflow-y: auto; ">
-            <table class="table table-hover text-nowrap mx-3" style="width: 850px;">
-                <thead>
-                    <tr>
-                        <th scope="col" style="width: 10%">Event No.</th>
-                        <th scope="col" style="width: 15%">Type</th>
-                        <th scope="col" style="width: 15%">Where</th>
-                        <th scope="col" style="width: 20%">Date/Time</th>
-                        <th scope="col" style="width: 10%">Employee ID</th>
-                        <th scope="col" style="width: 15%">Video</th>
-                        <th scope="col" style="width: 15%">Resolve</th>
-                    </tr>
-                </thead>
-                <tbody>
-                  {% for event in suspicious_events %}
-                  {% if event.sus_status == 0 %}
-                    <tr>
-                      <td>{{ event.sus_id }}</td>
-                      <td>{% if event.sus_type == 1 %}Employee{% else %}Drawer{% endif %}</td>
-                      <td>{% if event.sus_type == 0 %}Cashier{% else %}Table no. {{ event.sus_where }}{% endif %}</td>
-                      <td>{{ event.sus_datetime }}</td>
-                      <td>{{ event.sus_employeeid }}</td>
-                      <td>
-                        <!-- Button trigger modal -->
-                        <button type="button" style="border-radius: 50px; background-color: rgb(141, 172, 166); border-color: rgb(141, 172, 166);" class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#exampleModal{{ event.sus_id }}">
-                          Video <img src="{% static 'img/vdo.png' %}" class="icon-bar mb-1" alt="">
-                        </button>
-                        <!-- Modal -->
-                        <div class="modal fade" id="exampleModal{{ event.sus_id }}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-                          <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-                            <div class="modal-content" style="width: 700px;">
-                              <div class="modal-header">
-                                <h5 class="modal-title" id="exampleModalLabel">{{ event.sus_id }}</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                              </div>
-                              <div class="modal-body">
-                                <video width="400" controls style="width: 650px; height: 350px;">
-                                  <source src="{{ event.sus_video }}" type="video/mp4">
-                                  Your browser does not support HTML video.
-                                </video>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td style="color: rgb(172, 172, 172);">Resolved</td>
-                    </tr>
-                    {% endif %}
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
+
+    <h4 class="mt-4">Add Employee</h4>
+
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="row mt-5">
+          <div class="col-md-6" style="margin-left: 50px;">
+              <label for="firstName">First name:</label>
+              <input id="firstName" name="first_name" class="form-control mb-3" style="width: 400px; border-radius: 50px; height: 38px;" type="text" placeholder="Enter first name">
+          
+              <label for="lastName">Last name:</label>
+              <input id="lastName" name="last_name" class="form-control mb-3" style="width: 400px; border-radius: 50px; height: 38px;" type="text" placeholder="Enter last name">
+          
+              <label for="formFile" class="form-label">Upload photo:</label>
+              <input name="photo" class="form-control" style="width: 400px; border-radius: 50px; height: 38px;" type="file" id="formFile">
+          
+              <button type="submit" style="border-radius: 50px; width: 80px; background-color: rgb(141, 172, 166); border-color: rgb(141, 172, 166);" class="btn btn-dark mt-4">
+                  Save
+              </button>
+          </div>
+      </div>
+    </form>
 </div>
 </body>
 </html>

@@ -141,42 +141,69 @@
       </div>
 </div> 
 <div class="col-md-9">
-    <div class="card mt-5 align-items-start" style="width: 870px;">
-        <div class="card-body text-center">
-            <table class="table table-hover text-nowrap mx-3" style="width: 800px;">
-                <thead>
-                  <tr>
-                    <th scope="col" style="width: 5%">#</th>
-                    <th scope="col" style="width: 15%">Event No.</th>
-                    <th scope="col" style="width: 20%">Type</th>
-                    <th scope="col" style="width: 15%">Date</th>
-                    <th scope="col" style="width: 15%">Time</th>
-                    <th scope="col" style="width: 20%">Employee ID</th>
-                    <th scope="col" style="width: 10%">Video</th>
-                  </tr>
-                </thead>
-                  <tr>
-                    <th scope="row">1</th>
-                    <td>#</td>
-                    <td>#</td>
-                    <td>#</td>
-                    <td>#</td>
-                    <td>#</td>
-                    <td>#</td>
-                  </tr>
-                    <tr>
-                      <th scope="row">2</th>
-                      <td>#</td>
-                      <td>#</td>
-                      <td>#</td>
-                      <td>#</td>
-                      <td>#</td>
-                      <td>#</td>
-                    </tr>
-            </table>
-        </div>
-    </div>
+  <div class="card mt-3 align-items-center" style="width: 920px; height: 450px;">
+      <div class="card-body text-center">
+          <div style="max-height: 420px; overflow-y: auto; ">
+              <table class="table table-hover text-nowrap mx-3" style="width: 850px;">
+                  <thead>
+                      <tr>
+                          <th scope="col" style="width: 10%">Event No.</th>
+                          <th scope="col" style="width: 25%">Type</th>
+                          <th scope="col" style="width: 25%">Date/Time</th>
+                          <th scope="col" style="width: 10%">Employee ID</th>
+                          <th scope="col" style="width: 15%">Video</th>
+                          <th scope="col" style="width: 15%">Resolve</th>
+                      </tr>
+                  </thead>
+                  <tbody>
+                      {% for customer_event in customer_events %}
+                      <tr>
+                          <td>{{ customer_event.EventNo }}</td>
+                          <td>{{ customer_event.customer_id }}</td>
+                          <td>{{ customer_event.customer_in }}</td>
+                          <td>{{ customer_event.tableid }}</td>
+                          <td>
+                              <!-- Button trigger modal -->
+                              <button type="button" style="border-radius: 50px; background-color: rgb(141, 172, 166); border-color: rgb(141, 172, 166);" class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#exampleModal{{ customer_event.customer_id }}">
+                                  Video <img src="{% static 'img/vdo.png' %}" class="icon-bar mb-1" alt="">
+                              </button>
+                              
+                              <!-- Modal -->
+                              <div class="modal fade" id="exampleModal{{ customer_event.customer_id }}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+                                      <div class="modal-content" style="width: 700px;">
+                                          <div class="modal-header">
+                                              <h5 class="modal-title" id="exampleModalLabel">{{ customer_event.customer_id }}</h5>
+                                              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                          </div>
+                                          <div class="modal-body">
+                                            <video width="400" controls style="width: 650px; height: 350px;">
+                                              <source src="{{ customer_event.captured_video }}" type="video/mp4">
+                                              Your browser does not support HTML video.
+                                            </video>
+                                          </div>
+                                      </div>
+                                  </div>
+                              </div>
+                          </td>
+                          <td>
+
+                            <button type="button" style="border-radius: 50px; background-color: rgb(197, 97, 97); border-color: rgb(197, 97, 97);" class="btn btn-dark">
+                              Resolve
+                            </button>
+
+                          </td>
+                      </tr>
+                      {% endfor %}
+                  </tbody>
+              </table>
+          </div>
+      </div>
+  </div>
 </div>
+
+<!-- Bootstrap Bundle with Popper -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
 </div>
 </body>
 </html>
