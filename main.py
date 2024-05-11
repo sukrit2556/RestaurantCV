@@ -28,7 +28,7 @@ end_recording = False
 check_dimsum_started = False
 fakeCamFrame = None
 simulate_status = None
-
+update_shared_dict_in_procress = False
 
 
 ####################### THREADING PROCESS {BEGIN} #######################
@@ -352,27 +352,43 @@ def record_customer_activities(): #must start after check_available started only
         stop_thread = True
         
 def update_shared_dict():
-    global stop_thread
+    global stop_thread, update_shared_dict_in_procress
     while not stop_thread:
+        print("I workking")
         while shared_dict_update_queue.empty() and not stop_thread:
+            print("I'm waiting")
             time.sleep(0.1)
-        local_dict = shared_dict_update_queue.get()
-        #print(f"local dict is {local_dict}")
-        # Create a set of keys to delete from the shared dictionary
-        keys_to_delete = set(shared_dict.keys()) - set(local_dict.keys())
-        #print(f"key to delete = {keys_to_delete}")
+        print(f"fuck no thread stop = {stop_thread}")
+        print("sharred dict update q now = ", shared_dict_update_queue)
+        if not stop_thread:
+            local_dict = shared_dict_update_queue.get()
+            print(f"local_dict = shared_dict_update_queue.get() is complete")
+            print(f"local dict is {local_dict}")
+            # Create a set of keys to delete from the shared dictionary
+            keys_to_delete = set(shared_dict.keys()) - set(local_dict.keys())
+            #print(f"key to delete = {keys_to_delete}")
+            update_shared_dict_in_procress = True
+            print(f"thread stop is {stop_thread} start update dict")
+            # Delete keys from the shared dictionary
+            for key in keys_to_delete:
+                if stop_thread:
+                    break
+                del shared_dict[key]
+            print(f"after delete shared key")
 
-        # Delete keys from the shared dictionary
-        for key in keys_to_delete:
-            del shared_dict[key]
-
-        # Update or add keys to the shared dictionary
-        shared_dict.update(local_dict)
-        #print(f"shared dict after updated {shared_dict}")
-        #face_recog_queue.put(local_dict)
+            # Update or add keys to the shared dictionary
+            shared_dict.update(local_dict)
+            print("update complete")
+            #print(f"shared dict after updated {shared_dict}")
+            face_recog_queue.put(local_dict)
+            print("can put into face_recog_queue")
+            print(face_recog_queue)
+            update_shared_dict_in_procress = False
+            print(f"end update dict")
     print("update_shared_dict stopped")
 
 def recognize_employee_face():
+    
 
     #import Known_face encoding
     #wait until update_shared_dict is started
@@ -486,9 +502,13 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
             #print("len", len(detect_params[0]))
             key_contain_in_frame = []
             
-            
-            if len(DP) != 0:
+            print("after yolo processing")
 
+            if len(DP) != 0:
+                
+                while update_shared_dict_in_procress:
+                    print("there's an update")
+                    time.sleep(0.1)
                 local_dict = dict(shared_dict)
                 for i in range(len(detect_params[0])):
 
@@ -600,7 +620,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
                 update_local_dict(local_dict, key_contain_in_frame)
                 shared_dict_update_queue.put(local_dict)
             
-
+            print("after update shared key")
 
             ### draw table area ###
             draw_table_point(frame_data, availability_cache)
@@ -628,6 +648,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
             list_realtime_count_cache = list_realtime_count.copy()
             reset_people_count()
             
+            print("after imshow")
             
             #object1.add_frame(frame_data) # uncomment without recording cause memory leak!
 
@@ -641,6 +662,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
                 thread1.start() #calculate total person
                 thread5.start()
 
+            print("after start thread")
             
             if check_available_started and any(item == "occupied" for item in availability_cache) and len(availability_cache) > 0:
                 for i, item in enumerate(availability_cache):
@@ -676,25 +698,34 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
                     if check_dimsum_thread_list[i] != 0 and check_dimsum_thread_list[i].is_alive():
                         stop_dimsum_thread[i] = True
                         check_dimsum_thread_list[i].join()
+            
+            print("after dimsum")
 
             if cv2.waitKey(1) == ord("q"):
                 stop_thread = True
                 end_recording = True
                 break
+    print("done loop")
 
     thread3.join() if thread3.is_alive() else None
     thread2.join() if thread2.is_alive() else None
     thread1.join()  if thread1.is_alive() else None
     #thread4.join() # When everything done, release the capture
     thread5.join() if thread5.is_alive() else None
+    print(f"thread6 is alive = {thread6.is_alive()}")
     thread6.join() if thread6.is_alive() else None
-
+    print("after join thread")
     if simulate:
         fakeCamThread.join()
 
+    print("after stop simulate")
+
     cap.release()
+    print("715")
     cv2.destroyAllWindows()
+    print("717")
     manager.shutdown()
+    print("719")
 
     print("main program ended")
 pid = os.getpid()
@@ -703,7 +734,7 @@ if __name__ == "__main__":
     manager = multiprocessing.Manager()
     shared_dict = manager.dict()
     shared_dict_update_queue = queue.Queue()
-    #face_recog_queue = multiprocessing.Queue()
+    face_recog_queue = multiprocessing.Queue()
 
     if config['source'] == "video_frame":
         main(config['source'], simulate, url_path, frame_skipped, start_datetime)
@@ -713,7 +744,9 @@ if __name__ == "__main__":
 
 
     print("ended Process ID:", pid)
-    """face_recog_queue.close()
-    face_recog_queue.join_thread()
-
-    print(face_recog_queue)"""
+    while not face_recog_queue.empty():
+        face_recog_queue.get()
+    print("after clear face_recog queue")
+    face_recog_queue.close()
+    print("after kill queue")
+    print(face_recog_queue)
