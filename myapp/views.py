@@ -181,7 +181,7 @@ def AddEm(request):
         handle_uploaded_file(photo, new_filename)
         
         # Save the photo with the /mock_media/ path in the database
-        photo_path = os.path.join('/mock_media/', new_filename)
+        photo_path = os.path.join('/mock_media/employee_face', new_filename)
         
         # Create a new Employee object and save it to the database
         new_employee = Employee.objects.create(
@@ -248,7 +248,7 @@ def EditEm(request, id):
             new_filename = generate_unique_filename(photo_file.name)
             handle_uploaded_file(photo_file, new_filename)
             # Update employee_detail with the new filename
-            employee_detail.employee_image = os.path.join('\mock_media', new_filename)
+            employee_detail.employee_image = os.path.join('\mock_media\employee_face', new_filename)
         
         # Save the updated employee object
         employee_detail.save()
