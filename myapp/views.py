@@ -274,8 +274,6 @@ from django.db.models.functions import ExtractDay
 from django.db.models import Avg, ExpressionWrapper, F, DurationField, Sum
 
 
-
-
 def Dashboard(request):
     # Fetching data from the CustomerEvents table and aggregating the total customer amount per month
     customers = CustomerEvents.objects.annotate(
@@ -285,32 +283,34 @@ def Dashboard(request):
         total_customers=Sum('customer_amount')
     )
 
-    # Fetching data for average time spent per day
-    time_spent_per_day = CustomerEvents.objects.annotate(
-        day=ExtractDay('customer_in')
-    ).values('day').annotate(
-        total_time=Sum(F('customer_out') - F('customer_in')),
-        total_customers=Sum('customer_amount')
-    )
+    # Fetching data for the count of records for each sus_type (0 for drawer type and 1 for employee type)
+    sus_type_counts = SuspiciousEvents.objects.values('sus_type').annotate(count=Count('*'))
 
-    # Calculating average time spent per day
-    average_time_spent_per_day = []
-    for entry in time_spent_per_day:
-        total_time = entry['total_time']
-        total_customers = entry['total_customers']
-        if total_customers > 0:
-            average_time_spent = total_time / total_customers
-            entry['average_time_spent'] = average_time_spent.total_seconds() / 60  # Convert duration to minutes
-            average_time_spent_per_day.append(entry)
+    # Extracting the count for each sus_type
+    drawer_type_count = 0
+    employee_type_count = 0
+    for item in sus_type_counts:
+        if item['sus_type'] == 0:
+            drawer_type_count = item['count']
+        elif item['sus_type'] == 1:
+            employee_type_count = item['count']
+
+    # Fetching data for the count of records for each sus_status (resolved and unresolved)
+    sus_status_counts = SuspiciousEvents.objects.values('sus_status').annotate(count=Count('*'))
+
+    # Extracting the count for resolved and unresolved events
+    resolved_count = unresolved_count = 0
+    for item in sus_status_counts:
+        if item['sus_status'] == 0:
+            resolved_count = item['count']
+        elif item['sus_status'] == 1:
+            unresolved_count = item['count']
 
     # Extracting data for the line graph
     labels = [calendar.month_name[entry['month']] + ' ' + str(entry['year']) for entry in customers]
     data = [entry['total_customers'] for entry in customers]
 
-    # Extracting data for the average time spent per day
-    time_spent_labels = [entry['day'] for entry in average_time_spent_per_day]
-    time_spent_data = [entry['average_time_spent'] for entry in average_time_spent_per_day]
-
+    # Extracting data for the top months with the highest service usage
     top_months = CustomerEvents.objects.annotate(
         month=ExtractMonth('customer_in')
     ).values('month').annotate(
@@ -321,8 +321,10 @@ def Dashboard(request):
         'labels': labels,
         'data': data,
         'top_months': top_months,
-        'time_spent_labels': time_spent_labels,
-        'time_spent_data': time_spent_data,
+        'drawer_count': drawer_type_count,
+        'employee_count': employee_type_count,
+        'resolved_count': resolved_count,
+        'unresolved_count': unresolved_count,
     }
 
     return render(request, 'Dashboard.html', context)
