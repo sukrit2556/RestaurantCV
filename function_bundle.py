@@ -127,6 +127,9 @@ with open('myconfig.yaml', 'r') as file:
     ### Amount of frame skipped ####
     frame_skipped = config['frame_skip']
 
+    ##  color of person type
+    person_color = [tuple(config['colors']['unknown']), tuple(config['colors']['customer']), tuple(config['colors']['employee'])]
+
     if config['datetime'] == "now":
         start_datetime = datetime.now()
     else:
@@ -501,21 +504,21 @@ def classify_unknown_customer(people_dict, known_employee, id, is_customer, fram
     
 
 
-    #fix it
-    if (people_dict[id].probToBeCustomer > 0.5 and 
-            people_dict[id].person_type == "customer" and 
-            (people_dict[id].dt_latest_found - people_dict[id].dt_first_found).total_seconds() > 5
-            and people_dict[id].fixed == False):
-        data = people_dict[id]
-        data.person_type = "customer"
-        data.fixed = True
-        people_dict[id] = data
-    elif id in known_employee.keys():
-        data = people_dict[id]
-        data.person_type = known_employee[id]
-        data.fixed = True
-        people_dict[id] = data
-        del known_employee[id]
+        #fix it
+        if (people_dict[id].probToBeCustomer > 0.5 and 
+                people_dict[id].person_type == "customer" and 
+                (people_dict[id].dt_latest_found - people_dict[id].dt_first_found).total_seconds() > 5
+                and people_dict[id].fixed == False):
+            data = people_dict[id]
+            data.person_type = "customer"
+            data.fixed = True
+            people_dict[id] = data
+        elif id in known_employee.keys():
+            data = people_dict[id]
+            data.person_type = known_employee[id]
+            data.fixed = True
+            people_dict[id] = data
+            del known_employee[id]
 
 
 

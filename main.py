@@ -1,21 +1,18 @@
 import cv2
 import numpy as np
+import queue
+import os
 
 if __name__ == "__main__":
     from function_bundle import *
     from ultralytics import YOLO
     import multiprocessing
     from encoding_known_face import *
-"""if __name__ != "__main__":
-    from encoding_known_face import *"""
-import threading
-import traceback
-import statistics
-import queue
-import logging
-import sys
-import os
-import copy
+    import threading
+    import traceback
+    import statistics
+    import logging
+    import sys
 
 
 frame_count = 0
@@ -87,12 +84,21 @@ def calculate_real_people_total():
 
             while present_datetime < target_time and not stop_thread:
                 time.sleep(1)
-        print("calculate_real_people_total stopped")
 
     except Exception as e:
         print("error: ", e)
         traceback.print_exc()
         stop_thread = True
+
+    #save befor exit
+    for i in range (len(table_points)):
+        if len(sampling_from_tables[i]) > 0:
+            real_amount = int(statistics.mode(sampling_from_tables[i]))
+            update_db(table_name, "customer_amount", real_amount, 
+                ["created_datetime = (" + f"{select_db('customer_events', ['MAX(created_datetime)'], [f'tableID = {i+1}'])[0]})",
+                f"tableID = {i+1}"])
+            print("Updated!!!")
+    print('\033[93m' + 'calculate_real_people_total stopped' + '\033[0m')
 
 
 def check_available():
@@ -152,8 +158,13 @@ def check_available():
             print("error: ", e)
             traceback.print_exc()
             stop_thread = True
-
-    print("check_available stopped")
+    #save before exit
+    for i, item in enumerate(table_status):
+        if table_status[i] > 5/2:
+            update_db(table_name, "customer_OUT", present_datetime, 
+                ["created_datetime = (" + f"{select_db('customer_events', ['MAX(created_datetime)'], [f'tableID = {i+1}'])[0]})",
+                f"tableID = {i+1}", "customer_OUT = '0000-00-00 00:00:00'"])
+    print('\033[93m' + 'check_available stopped' + '\033[0m')
 
 def now_frame_rate():
     global frame_rate, stop_thread
@@ -163,7 +174,7 @@ def now_frame_rate():
         time.sleep(second)
         frame_count_after = frame_count
         frame_rate = int((frame_count_after - frame_count_before)/second)
-    print("now_frame_rate stopped")
+    print('\033[93m' + 'now_frame_rate stopped' + '\033[0m')
 
 def combine_frame():
     completed_frames = None
@@ -196,8 +207,10 @@ def combine_frame():
                 break
         time.sleep(0.1)
     out.release()
+    print('\033[93m' + 'combine_frame stopped' + '\033[0m')
 
 def check_dimsum(table_index, object_frame_in):
+    print('\033[91m' + f'*check_dimsum at table {table_index+1} started' + '\033[0m')
     model = YOLO(config['dimsum_model_path'])
     global stop_thread, realtime_dimsum_found, check_dimsum_started
     to_check[table_index] = 2
@@ -236,7 +249,7 @@ def check_dimsum(table_index, object_frame_in):
             found = 0
         time.sleep(0.1)
     object_frame_in.clear_all()
-    print("Check_dimsum stopped")
+    print('\033[93m' + f'check_dimsum at table {table_index+1} stopped' + '\033[0m')
 
 def FakeCamera():
 
@@ -275,9 +288,10 @@ def FakeCamera():
 
     logging.debug('[FakeCamera] Ending')
     simulate_status = False
-    print("fake_camera stopped")
+    print('\033[93m' + 'FakeCamera stopped' + '\033[0m')
 
 def record_customer_activities(): #must start after check_available started only
+    
     global stop_thread, present_datetime, plotted_points_recording, end_recording, availability_cache, blank_frame_cache
     record_status = [0 for _ in range (len(table_points))]
     record_object = [None for _ in range (len(table_points))]
@@ -291,6 +305,7 @@ def record_customer_activities(): #must start after check_available started only
             for i in range (len(table_points)):
                 if availability_cache[i] == "occupied":
                     if record_status[i] == 0:
+                        print('\033[91m' + f'*record_activities at table {i+1} started' + '\033[0m')
                         #select id from customer_event where created_datetime = (max(created_datetim) from table=i+1) and table = i+1
                         _, customerID = select_db("customer_events", ["customer_ID"], 
                                                 ["created_datetime = (" + f"{select_db('customer_events', ['MAX(created_datetime)'], [f'tableID = {i+1}'])[0]})", f"tableID = {i+1}"])
@@ -327,6 +342,7 @@ def record_customer_activities(): #must start after check_available started only
 
                 elif availability_cache[i] == "unoccupied":
                     if record_status[i] == 1:
+                        print('\033[91m' + f'**record_activities at table {i+1} stopped' + '\033[0m')
 
                         #end recording
                         record_object[i].release()
@@ -347,7 +363,7 @@ def record_customer_activities(): #must start after check_available started only
         for i in range (len(table_points)):
             if record_object[i] != None:
                 record_object[i].release()
-        print("record_customer_activity stopped")
+        print('\033[93m' + 'record_customer_activities stopped' + '\033[0m')
     except Exception as e:
         print("error: ", e)
         traceback.print_exc()
@@ -362,7 +378,7 @@ def update_shared_dict():
             local_dict = shared_dict_update_queue.get()
             # Create a set of keys to delete from the shared dictionary
             keys_to_delete = set(shared_dict.keys()) - set(local_dict.keys())
-            update_shared_dict_in_procress = True
+            shared_dict_update_inprogress.set()
             # Delete keys from the shared dictionary
             if frame_count % 5 == 0:
                 face_recog_queue.put((blank_frame_cache, local_dict))
@@ -375,10 +391,10 @@ def update_shared_dict():
             shared_dict.update(local_dict)
             #print(f"shared dict after updated {shared_dict}")
             
-            update_shared_dict_in_procress = False
-    print("update_shared_dict stopped")
+            shared_dict_update_inprogress.clear()
+    print('\033[93m' + 'update_shared_dict stopped' + '\033[0m')
 
-def recognize_employee_face(shared_dict, todo_queue, known_face_encodings, known_face_names, stop_subprocess, known_employee):
+def recognize_employee_face(shared_dict, todo_queue, known_face_encodings, known_face_names, stop_subprocess, known_employee, shared_dict_update_inprogress):
     
     import face_recognition
     import time
@@ -404,7 +420,11 @@ def recognize_employee_face(shared_dict, todo_queue, known_face_encodings, known
                 # Pop items until the dictionary is empty
                 while filtered_dict:
                     key, value = filtered_dict.popitem()
-                    if value.fixed == False:
+                    while shared_dict_update_inprogress.is_set():
+                        time.sleep(0.1)
+                    if value.fixed == True or key not in shared_dict:
+                        continue
+                    if value.fixed == False and key in shared_dict:
                         top_left = value.top_left
                         bottom_right = value.bottom_right
                         y_min = top_left[1]
@@ -435,16 +455,19 @@ def recognize_employee_face(shared_dict, todo_queue, known_face_encodings, known
                                 if key in shared_dict:
                                     # Update the value of the key
                                     print('\033[91m' + 'I recognized someone!!!' + '\033[0m')
-                                    print(f"found {name}")
-                                    print("Updated shared_dict['{}']".format(key))
+                                    print(f"found {name} at id {key}")
                                     known_employee[key] = name
                                     cv2.imwrite("foundyou.jpg", cropped_person)
                                     break
-        print("Sub process is out of touch")
+            keys_to_delete = set(known_employee.keys()) - set(shared_dict.keys())
+            for key in keys_to_delete:
+                del known_employee[key]
+
     except Exception as e:
         print("error: ", e)
         traceback.print_exc()
         stop_subprocess.set()
+    print('\033[93m' + f'[Subprocess] face recognition stopped' + '\033[0m')
 
 def print_shared_key():
     while not stop_thread:
@@ -453,7 +476,7 @@ def print_shared_key():
             print("   ",end="")
         time.sleep(0.1)
         print("\n")
-    print("print thread stopped")
+    print('\033[93m' + f'printed_shared_key stopped' + '\033[0m')
 
 ####################### THREADING PROCESS {END} #######################
 ####################### THREADING PROCESS {END} #######################
@@ -499,11 +522,10 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
     thread6 = threading.Thread(target=update_shared_dict)
     thread7 = threading.Thread(target=print_shared_key)
     
-    
-    
-
-
+    print('\033[92m' + f'Initializing Done!!!' + '\033[0m')
+    print('\033[93m' + f'[Main Loop] Started!' + '\033[0m')
     while not stop_thread:
+        
         # Capture frame-by-frame
         if not simulate and source_platform == "video_frame":    #video frame and not simulate fake camera
             ret, frame = cap.read() 
@@ -560,7 +582,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
 
             if len(DP) != 0:
                 
-                while update_shared_dict_in_procress:
+                while shared_dict_update_inprogress.is_set():
                     time.sleep(0.1)
                 local_dict = dict(shared_dict)
                 for i in range(len(detect_params[0])):
@@ -600,21 +622,22 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
                     # Display class name and confidence (only used in track mode)
                     try:
                         id = int(boxes[i].id.cpu().numpy()[0])
+                        
                         for pt1, pt2 in local_dict[id].all_edge():
                             cv2.line(frame_data, pt1, pt2, 
-                                     detection_colors[int(0 if local_dict[id].person_type == "customer" else (1 if local_dict[id].person_type == "unknown" else 2))], thickness=4, lineType=cv2.LINE_AA)
+                                     person_color[int(0 if local_dict[id].person_type == "unknown" else (1 if local_dict[id].person_type == "customer" else 2))], thickness=4, lineType=cv2.LINE_AA)
                         cv2.rectangle(
                             frame_data,
                             (int(bb[0]), int(bb[1])),
                             (int(bb[2]), int(bb[3])),
-                            detection_colors[int(0 if local_dict[id].person_type == "customer" else (1 if local_dict[id].person_type == "unknown" else 2))],
+                            person_color[int(0 if local_dict[id].person_type == "unknown" else (1 if local_dict[id].person_type == "customer" else 2))],
                             3,
                         )
                         cv2.rectangle(frame_data, (int(bb[0]), int(bb[1])), (int(bb[2]), int(bb[1]+30)), 
-                                      detection_colors[int(0 if local_dict[id].person_type == "customer" else (1 if local_dict[id].person_type == "unknown" else 2))], -1) 
+                                      person_color[int(0 if local_dict[id].person_type == "unknown" else (1 if local_dict[id].person_type == "customer" else 2))], -1) 
                         cv2.putText(
                             frame_data,
-                            class_list[int(clsID)] + " " + str(id),
+                            str(local_dict[id].person_type) + " " + str(id),
                             (int(bb[0]), int(bb[1]) + 25),
                             font,
                             1,
@@ -623,49 +646,14 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
                         )
                         cv2.putText(
                             frame_data,
-                            str(local_dict[id].person_type) + " " + "{:.2f}".format(local_dict[id].probToBeCustomer),
+                            str(local_dict[id].fixed) + "{:.2f}".format(local_dict[id].probToBeCustomer),
                             (int(bb[0]), int(bb[1]) + 50),
                             font,
                             1,
                             (255, 255, 255),
                             1,
                         )
-                        """cv2.putText(
-                            frame_data,
-                            str(local_dict[id].dt_first_found) + " " + str(local_dict[id].dt_latest_found),
-                            (int(bb[0]), int(bb[1]) + 75),
-                            font,
-                            1,
-                            (255, 255, 255),
-                            1,
-                        )
-                        cv2.putText(
-                            frame_data,
-                            str(local_dict[id].frame_first_found)+ " " + str(local_dict[id].frame_latest_found),
-                            (int(bb[0]), int(bb[1]) + 100),
-                            font,
-                            1,
-                            (255, 255, 255),
-                            1,
-                        )"""
-                        cv2.putText(
-                            frame_data,
-                            str(local_dict[id].fixed),
-                            (int(bb[0]), int(bb[1]) + 75),
-                            font,
-                            1,
-                            (255, 255, 255),
-                            1,
-                        )
-                        """cv2.putText(
-                            frame_data,
-                            str(local_dict[id].top_left) + " " + str(local_dict[id].bottom_right),
-                            (int(bb[0]), int(bb[1]) + 100),
-                            font,
-                            1,
-                            (255, 255, 255),
-                            1,
-                        )"""
+                        
                     except Exception as e:
                         print("error: ", e)
                         traceback.print_exc()
@@ -710,6 +698,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
                 thread3.start()#check framerate
                 #thread4.start() #record video
                 thread6.start()
+            #if frame_count == 20:
                 #thread7.start()
             # Terminate run when "Q" pressed
             if check_available_started and not thread1.is_alive():
@@ -758,7 +747,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
                 end_recording = True
                 stop_subprocess.set()
                 break
-    print("done loop")
+    print('\033[93m' + f'[Main Loop] Ended!' + '\033[0m')
 
     thread3.join() if thread3.is_alive() else None
     thread2.join() if thread2.is_alive() else None
@@ -766,18 +755,15 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
     #thread4.join() # When everything done, release the capture
     thread5.join() if thread5.is_alive() else None
     thread6.join() if thread6.is_alive() else None
-    print("after join thread")
+
     if simulate:
         fakeCamThread.join()
 
-    print("after stop simulate")
+    print('\033[93m' + f'>> All thread joined' + '\033[0m')
 
     cap.release()
-    print("715")
     cv2.destroyAllWindows()
-    print("719")
-
-    print("main program ended")
+    print('\033[93m' + f'>> Main function ended' + '\033[0m')
 pid = os.getpid()
 print("Process ID:", pid)
 if __name__ == "__main__":
@@ -786,10 +772,11 @@ if __name__ == "__main__":
     shared_dict_update_queue = queue.Queue()
     face_recog_queue = manager.Queue()
     stop_subprocess = multiprocessing.Event()
+    shared_dict_update_inprogress = multiprocessing.Event()
     known_employee = manager.dict()
 
     process = multiprocessing.Process(target=recognize_employee_face, 
-                                      args=(shared_dict, face_recog_queue, known_face_encodings, known_face_names, stop_subprocess, known_employee))
+                                      args=(shared_dict, face_recog_queue, known_face_encodings, known_face_names, stop_subprocess, known_employee, shared_dict_update_inprogress))
     process.start()
 
 
@@ -799,14 +786,12 @@ if __name__ == "__main__":
     if config['source'] == "live_frame":
         main(config['source'], False, url_path, 1, datetime.now())
 
-    print(shared_dict.keys())
     
     stop_subprocess.set()
     process.join()
     manager.shutdown()
+    print('\033[93m' + '>> All subprocess are terminated' + '\033[0m')
+
     print("ended Process ID:", pid)
 
-    print("after clear face_recog queue")
-    print("after kill queue")
-    print(face_recog_queue)
-    print(shared_dict)
+

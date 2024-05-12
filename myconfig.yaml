@@ -19,6 +19,21 @@ live_frame:
 
 save_vid_period: 1
 
+#color in BGR
+colors:
+  unknown:
+    - 102
+    - 0
+    - 204
+  customer:
+    - 255
+    - 0
+    - 102
+  employee:
+    - 204
+    - 204
+    - 0
+
 table_coordinate:
   pts1:
     - [90, 245]
