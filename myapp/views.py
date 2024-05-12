@@ -271,7 +271,9 @@ from django.utils import timezone
 from datetime import timedelta
 from django.db.models import Avg
 from django.db.models.functions import ExtractDay
-from django.db.models import Avg, ExpressionWrapper, F, DurationField, Sum
+from django.db.models import Avg, ExpressionWrapper, fields, F, DurationField, Sum
+from django.db.models.functions import TruncDate
+from datetime import timedelta
 
 
 def Dashboard(request):
@@ -306,6 +308,31 @@ def Dashboard(request):
         elif item['sus_status'] == 1:
             unresolved_count = item['count']
 
+    customer_events = CustomerEvents.objects.all()
+
+    # Calculate waiting time for each event and group by date
+    waiting_data = {}  # Dictionary to store waiting time per day
+    for event in customer_events:
+        day = event.customer_in.date()  # Get the date of the event
+        if event.time_getfood:  # Check if food was served
+            waiting_time = event.time_getfood - event.customer_in  # Calculate waiting time
+            if day in waiting_data:
+                waiting_data[day].append(waiting_time.total_seconds() / 60)  # Convert to minutes
+            else:
+                waiting_data[day] = [waiting_time.total_seconds() / 60]  # Convert to minutes
+
+    # Calculate average waiting time for each day
+    avg_waiting_per_day = {}
+    for day, waiting_times in waiting_data.items():
+        avg_waiting_per_day[day] = sum(waiting_times) / len(waiting_times)
+
+    # Sort the dictionary by date if needed
+    avg_waiting_per_day = dict(sorted(avg_waiting_per_day.items()))
+
+    # Prepare data for passing to the template
+    waiting_labels = list(avg_waiting_per_day.keys())
+    waiting_data = list(avg_waiting_per_day.values())
+
     # Extracting data for the line graph
     labels = [calendar.month_name[entry['month']] + ' ' + str(entry['year']) for entry in customers]
     data = [entry['total_customers'] for entry in customers]
@@ -325,6 +352,8 @@ def Dashboard(request):
         'employee_count': employee_type_count,
         'resolved_count': resolved_count,
         'unresolved_count': unresolved_count,
+        'waiting_labels': waiting_labels,
+        'waiting_data': waiting_data,
     }
 
     return render(request, 'Dashboard.html', context)
