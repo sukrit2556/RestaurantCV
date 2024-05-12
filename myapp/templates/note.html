@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Line Graph</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <canvas id="myChart"></canvas>
+    <script>
+        // Sample data for the graph
+    const data = {
+        labels: ['January', 'February', 'March', 'April', 'May'],
+        datasets: [{
+            label: 'Sales',
+            backgroundColor: 'rgb(255, 99, 132)',
+            borderColor: 'rgb(255, 99, 132)',
+            data: [10, 20, 30, 25, 35],
+            fill: false,
+        }]
+    };
+
+    // Configuration options for the graph
+    const config = {
+        type: 'line',
+        data: data,
+        options: {}
+    };
+
+    // Create the chart instance
+    var myChart = new Chart(
+        document.getElementById('myChart'),
+        config
+    );
+    </script>
+</body>
+</html>
+
+

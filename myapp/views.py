@@ -15,6 +15,7 @@ from django.utils.text import slugify
 from datetime import datetime
 
 
+
 def resolve_suspicious_event(request, sus_id):
     try:
         suspicious_event = SuspiciousEvents.objects.get(sus_id=sus_id)
@@ -51,8 +52,40 @@ def menu(request):
 
 def CustDetail(request, id):
     customer_detail = CustomerEvents.objects.get(customer_id=id)
+
+    customer_in = customer_detail.customer_in
+    customer_out = customer_detail.customer_out
+    time_getFood = customer_detail.time_getfood
+
+    if customer_out:
+        time_spent = customer_out - customer_in
+
+        # Convert time_spent to hours and minutes
+        hours, remainder = divmod(time_spent.seconds, 3600)
+        minutes, _ = divmod(remainder, 60)
+
+        # Format the output
+        time_spent_formatted = f"{hours} hours and {minutes} minutes"
+    else:
+        # If customer_out is None, set time_spent_formatted to a default value
+        time_spent_formatted = "Customer still present"
+
+    # Pass the formatted time spent to the template context
+    if customer_in and time_getFood:
+        # Calculate the waiting time for food
+        waiting_time_for_food = time_getFood - customer_in
+
+        # Convert waiting_time_for_food to minutes
+        waiting_time_minutes = waiting_time_for_food.seconds // 60
+
+        # Format the output
+        waiting_time_formatted = f"{waiting_time_minutes} minutes"
+    else:
+        waiting_time_formatted = "N/A"  # Default value if either customer_in or time_getFood is None
     context = {
         'customer_detail': customer_detail,
+        'time_spent_formatted': time_spent_formatted,
+        'waiting_time_formatted': waiting_time_formatted
     }
     return render(request, 'CustEvent-detail.html', context)
 
@@ -230,9 +263,66 @@ def delete_employee(request, employee_id):
     employee.delete()
     return redirect('ListTable')
 
+from django.db.models import Sum, Count
+from django.db.models.functions import ExtractMonth, ExtractYear
+import calendar
+from django.db.models import F, ExpressionWrapper, DurationField
+from django.utils import timezone
+from datetime import timedelta
+from django.db.models import Avg
+from django.db.models.functions import ExtractDay
+from django.db.models import Avg, ExpressionWrapper, F, DurationField, Sum
+
+
+
+
 def Dashboard(request):
-    customer_events = CustomerEvents.objects.all()
+    # Fetching data from the CustomerEvents table and aggregating the total customer amount per month
+    customers = CustomerEvents.objects.annotate(
+        month=ExtractMonth('customer_in'),
+        year=ExtractYear('customer_in')
+    ).values('month', 'year').annotate(
+        total_customers=Sum('customer_amount')
+    )
+
+    # Fetching data for average time spent per day
+    time_spent_per_day = CustomerEvents.objects.annotate(
+        day=ExtractDay('customer_in')
+    ).values('day').annotate(
+        total_time=Sum(F('customer_out') - F('customer_in')),
+        total_customers=Sum('customer_amount')
+    )
+
+    # Calculating average time spent per day
+    average_time_spent_per_day = []
+    for entry in time_spent_per_day:
+        total_time = entry['total_time']
+        total_customers = entry['total_customers']
+        if total_customers > 0:
+            average_time_spent = total_time / total_customers
+            entry['average_time_spent'] = average_time_spent.total_seconds() / 60  # Convert duration to minutes
+            average_time_spent_per_day.append(entry)
+
+    # Extracting data for the line graph
+    labels = [calendar.month_name[entry['month']] + ' ' + str(entry['year']) for entry in customers]
+    data = [entry['total_customers'] for entry in customers]
+
+    # Extracting data for the average time spent per day
+    time_spent_labels = [entry['day'] for entry in average_time_spent_per_day]
+    time_spent_data = [entry['average_time_spent'] for entry in average_time_spent_per_day]
+
+    top_months = CustomerEvents.objects.annotate(
+        month=ExtractMonth('customer_in')
+    ).values('month').annotate(
+        total_customerss=Sum('customer_amount')
+    ).order_by('-total_customerss')[:3]
+
     context = {
-        'customer_events': customer_events
+        'labels': labels,
+        'data': data,
+        'top_months': top_months,
+        'time_spent_labels': time_spent_labels,
+        'time_spent_data': time_spent_data,
     }
-    return render(request,"Dashboard.html",context)
+
+    return render(request, 'Dashboard.html', context)

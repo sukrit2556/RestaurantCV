@@ -1,0 +1,373 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- bootstrap -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/bs-brain@2.0.4/components/charts/chart-1/assets/css/chart-1.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+    <!--style-->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script src="https://unpkg.com/bs-brain@2.0.4/components/charts/chart-1/assets/controller/chart-1.js"></script>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+    <!--fonts-->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt&display=swap" rel="stylesheet">
+    <link rel="icon" href="img/tab_logo.png">
+    <!----->
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="description" content="">
+        <meta name="author" content="Mark Otto, Jacob Thornton, and Bootstrap contributors">
+        <meta name="generator" content="Hugo 0.84.0">
+    
+        <link rel="canonical" href="https://getbootstrap.com/docs/5.0/examples/sidebars/">
+    
+        
+    
+        <!-- Bootstrap core CSS -->
+    <link href="/docs/5.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    
+        <!-- Favicons -->
+    <link rel="apple-touch-icon" href="/docs/5.0/assets/img/favicons/apple-touch-icon.png" sizes="180x180">
+    <link rel="icon" href="/docs/5.0/assets/img/favicons/favicon-32x32.png" sizes="32x32" type="image/png">
+    <link rel="icon" href="/docs/5.0/assets/img/favicons/favicon-16x16.png" sizes="16x16" type="image/png">
+    <link rel="manifest" href="/docs/5.0/assets/img/favicons/manifest.json">
+    <link rel="mask-icon" href="/docs/5.0/assets/img/favicons/safari-pinned-tab.svg" color="#7952b3">
+    <link rel="icon" href="/docs/5.0/assets/img/favicons/favicon.ico">
+    <meta name="theme-color" content="#7952b3">
+    
+    
+        <style>
+          .bd-placeholder-img {
+            font-size: 1.125rem;
+            text-anchor: middle;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            user-select: none;
+          }
+    
+          @media (min-width: 768px) {
+            .bd-placeholder-img-lg {
+              font-size: 3.5rem;
+            }
+          }
+        </style>
+    
+        
+        <!-- Custom styles for this template -->
+        <link href="sidebars.css" rel="stylesheet">
+      </head>
+    <title>Computer vision for restuarant | Menu</title>
+</head>
+
+<body>
+    
+
+<!-- Image and text -->
+<nav class="navbar navbar-bg py-4">
+  <a class="navbar-brand mx-3" href="menu">
+    <div class="font-nav">
+      <img src="{% static 'img/eye1.png' %}" width="30" height="30" class="d-inline-block align-top" alt="">
+      <b>Computer vision for restuarant</b>
+    </div>
+  </a>
+  <div class="mx-3">
+    <a href="login" class="font-log op-butt align-top">
+      <b>Logout</b>
+    </a>
+    <b style="color: white;">|</b>
+    <b style="color: white;">Firstname Surname</b>
+    <!--<img class="rounded-circle" width="30" height="30" alt="" src="img/bl-pic.webp" />-->
+  </div>
+</nav>
+
+<div class="row">
+<div class="col-md-3">
+    <div class="d-flex flex-column flex-shrink-0 p-3 bg-light" style="max-width: 100%; height: 480px;">
+        <a href="{% url 'menu' %}" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto link-dark text-decoration-none">
+          <img src="{% static 'img/menu.png' %}" class="menu-bar me-2" alt="">
+          <span class="fs-4 align-items-center"><b>Menu</b></span>
+        </a>
+        <hr>
+        <ul class="nav nav-pills flex-column mb-auto">
+
+          <li class="list-hov">
+            <a href="{% url 'CustTable' %}" class="nav-link link-dark mb-2 n" aria-current="page">
+              <img src="{% static 'img/dinner2.png' %}" class="icon-bar me-2" alt="">
+              Customers Events
+            </a>
+          </li>
+
+<!--           <li class="list-hov">
+            <a href="{% url 'EmTable' %}" class="nav-link link-dark mb-2">
+              <img src="{% static 'img/rest1.png' %}" class="icon-bar me-2" alt="">
+              Employees Events
+            </a>
+          </li> -->
+
+          <li class="list-hov">
+            <a href="{% url 'SusTable' %}" class="nav-link link-dark mb-2">
+              <img src="{% static 'img/loupe1.png' %}" class="icon-bar me-2" alt="">
+              Suspicious Events
+            </a>
+          </li>
+
+          <li class="list-hov">
+            <a href="{% url 'ResTable' %}" class="nav-link link-dark mb-2">
+              <img src="{% static 'img/check1.png' %}" class="icon-bar me-2" alt="">
+              Resolved Events
+            </a>
+          </li>
+
+          <li class="list-hov">
+            <a href="{% url 'ListTable' %}" class="nav-link link-dark mb-2">
+              <img src="{% static 'img/id1.png' %}" class="icon-bar me-2" alt="">
+              List of employees
+            </a>
+          </li>
+
+          <li class="nav-item list-butt">
+            <a href="#" class="nav-link link-dark mb-2" aria-current="page">
+              <img src="{% static 'img/graph1.png' %}" class="icon-bar me-2" alt="">
+              Dashboard
+            </a>
+          </li>
+
+        </ul>
+      </div>
+</div> 
+<div class="col-md-9">
+    <div class="row">
+        <div class="mt-3" style="width: 450px;">
+            <div class="card widget-card border-light shadow-sm">
+                <div class="card-body">
+                    <div class="d-block d-sm-flex align-items-center justify-content-between mb-0">
+                        <div class="mb-3 mb-sm-0">
+                            <h5 class="card-title widget-card-title">Amount of customer per month</h5>
+                        </div>
+                        <div>
+                        <!--<select class="form-select text-secondary border-light-subtle">
+                            <option value="1">March 2023</option>
+                            <option value="2">April 2023</option>
+                            <option value="3">May 2023</option>
+                            <option value="4">June 2023</option>
+                        </select>-->
+                        </div>
+                    </div>
+                    <!--<div id="bsb-chart-1" style="width: 350px; margin-right: 40px;"></div>-->
+                    <canvas id="customerChart" width="200"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-3" style="width: 350px;">
+            <div class="card widget-card border-light shadow-sm">
+                <div class="card-body">
+                    <div class="d-block d-sm-flex align-items-center justify-content-between mb-0">
+                        <div class="mb-3 mb-sm-0">
+                            <h5 class="card-title widget-card-title">Top 3 months with the highest service usage</h5>
+                            <ul>
+                            <span class="rounded-pill" alt="...">
+                            {% for month in top_months %}
+                                {% if month.month == 1 %}
+                                    <h3>
+                                        January
+                                        <small class="text-muted">{{ month.total_customerss }} person</small>
+                                    </h3>
+                                {% endif %}
+                                {% if month.month == 2 %}
+                                    <h3>
+                                        February
+                                        <small class="text-muted">{{ month.total_customerss }} person</small>
+                                    </h3>
+                                {% endif %}
+                                {% if month.month == 3 %}
+                                    <h3>
+                                        March
+                                        <small class="text-muted">{{ month.total_customerss }} person</small>
+                                    </h3>
+                                {% endif %}
+                                {% if month.month == 4 %}
+                                    <h3>
+                                        April
+                                        <small class="text-muted">{{ month.total_customerss }} person</small>
+                                    </h3>
+                                {% endif %}
+                                {% if month.month == 5 %}
+                                    <h3>
+                                        May
+                                        <small class="text-muted">{{ month.total_customerss }} person</small>
+                                    </h3>
+                                {% endif %}
+                                {% if month.month == 6 %}
+                                    <h3>
+                                        June
+                                        <small class="text-muted">{{ month.total_customerss }} person</small>
+                                    </h3>
+                                {% endif %}
+                                {% if month.month == 7 %}
+                                    <h3>
+                                        July
+                                        <small class="text-muted">{{ month.total_customerss }} person</small>
+                                    </h3>
+                                {% endif %}
+                                {% if month.month == 8 %}
+                                    <h3>
+                                        August
+                                        <small class="text-muted">{{ month.total_customerss }} person</small>
+                                    </h3>
+                                {% endif %}
+                                {% if month.month == 9 %}
+                                    <h3>
+                                        September
+                                        <small class="text-muted">{{ month.total_customerss }} person</small>
+                                    </h3>
+                                {% endif %}
+                                {% if month.month == 10 %}
+                                    <h3>
+                                        October
+                                        <small class="text-muted">{{ month.total_customerss }} person</small>
+                                    </h3>
+                                {% endif %}
+                                {% if month.month == 11 %}
+                                    <h3>
+                                        November
+                                        <small class="text-muted">{{ month.total_customerss }} person</small>
+                                    </h3>
+                                {% endif %}
+                                {% if month.month == 12 %}
+                                    <h3>
+                                        December
+                                        <small class="text-muted">{{ month.total_customerss }} person</small>
+                                    </h3>
+                                {% endif %}
+                            {% endfor %}
+                            </span>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="mt-3" style="width: 450px;">
+            <div class="card widget-card border-light shadow-sm">
+                <div class="card-body">
+                    <div class="d-block d-sm-flex align-items-center justify-content-between mb-0">
+                        <div class="mb-3 mb-sm-0">
+                            <h5 class="card-title widget-card-title">Average time spent per day</h5>
+                        </div>
+                        <div>
+                        <!--<select class="form-select text-secondary border-light-subtle">
+                            <option value="1">March 2023</option>
+                            <option value="2">April 2023</option>
+                            <option value="3">May 2023</option>
+                            <option value="4">June 2023</option>
+                        </select>-->
+                        </div>
+                    </div>
+                    <!--<div id="bsb-chart-1" style="width: 350px; margin-right: 40px;"></div>-->
+                    <canvas id="TimeSpentChart" width="200"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-3" style="width: 450px;">
+            <div class="card widget-card border-light shadow-sm">
+                <div class="card-body">
+                    <div class="d-block d-sm-flex align-items-center justify-content-between mb-0">
+                        <div class="mb-3 mb-sm-0">
+                            <h5 class="card-title widget-card-title">Suspicious issues</h5>
+                        </div>
+                        <div>
+                        <!--<select class="form-select text-secondary border-light-subtle">
+                            <option value="1">March 2023</option>
+                            <option value="2">April 2023</option>
+                            <option value="3">May 2023</option>
+                            <option value="4">June 2023</option>
+                        </select>-->
+                        </div>
+                    </div>
+                    <!--<div id="bsb-chart-1" style="width: 350px; margin-right: 40px;"></div>-->
+                    <canvas id="TimeSpentChart" width="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+  <script>
+    var ctx = document.getElementById('customerChart').getContext('2d');
+    var myChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: {{ labels|safe }},
+            datasets: [{
+                label: 'Customers (person)',
+                data: {{ data|safe }},
+                backgroundColor: 'rgb(64, 128, 125)',
+                borderColor: 'rgb(64, 128, 125)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+</script>
+
+<script>
+    var ctx = document.getElementById('TimeSpentChart').getContext('2d');
+    var myChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: {{ time_spent_labels|safe }},
+            datasets: [{
+                label: 'Average Time Spent per Customer (minutes)',
+                data: {{ time_spent_data|safe }},
+                backgroundColor: 'rgb(64, 128, 125)',
+                borderColor: 'rgb(64, 128, 125)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                x: {
+                    
+                },
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+</script>
+
+<!--   <div class="card mt-3 mx-3" style="width: 280px; height: 300px;">
+        <div class="card-body">
+            <p class="text-center"><strong>More details</strong></p>
+            
+        </div>
+        </div>-->
+
+</div>
+</div>
+</div>
+</body>
+</html>

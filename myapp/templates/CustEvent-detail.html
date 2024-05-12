@@ -138,7 +138,7 @@
           </li>
 
           <li class="list-hov">
-            <a href="Dashboard" class="nav-link link-dark mb-2">
+            <a href="{% url 'Dashboard' %}" class="nav-link link-dark mb-2">
               <img src="{% static 'img/graph1.png' %}" class="icon-bar me-2" alt="">
               Dashboard
             </a>
@@ -163,8 +163,12 @@
           </div>
       
           <div id="collapseOne" class="collapse show" aria-labelledby="headingOne" data-parent="#accordion">
-            <div class="card-body">
-              <img src="{{ customer_detail.getfood_frame }}" class="align-items-center d-block img-fluid" style="max-width: 575px; max-height: 350px;" alt="...">
+            <div class="card-body text-center">
+              {% if customer_detail.captured_video == 1 %}
+                  <img src="{{ customer_detail.getfood_frame }}" class="align-items-center d-block img-fluid" style="max-width: 575px; max-height: 350px;" alt="...">
+              {% else %}
+                  <p>No image available.</p>
+              {% endif %}
             </div>
           </div>
         </div>
@@ -177,11 +181,15 @@
             </h5>
           </div>
           <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordion">
-            <div class="card-body">
-              <video width="400" controls style="width: 575px; height: 350px;">
-                <source src="{{ customer_detail.captured_video }}" type="video/mp4">
-                Your browser does not support HTML video.
-              </video>
+            <div class="card-body text-center">
+              {% if customer_detail.captured_video == 1 %}
+                  <video width="400" controls style="width: 575px; height: 350px;">
+                      <source src="{{ customer_detail.captured_video }}" type="video/mp4">
+                      Your browser does not support HTML video.
+                  </video>
+              {% else %}
+                  <p>No captured video available.</p>
+              {% endif %}
             </div>
           </div>
         </div>
@@ -192,13 +200,13 @@
         <div class="card-body">
             <p class="text-center"><strong>More details</strong></p>
             <hr>
-            <p><strong>Event No.: {{ customer_detail.EventNo }}</strong>
-            <p><strong>Date/Time: </strong><li class="list-inline-item">{{ customer_detail.customer_in }}</li></p>
-            <p><strong>Table No.: </strong>{{ customer_detail.tableid }}</p>
-            <p><strong>จำนวนลูกค้า: </strong>{{ customer_detail.customer_amount }}</p>
-            <p><strong>ระยะเวลาที่ลูกค้าอยู่ที่โต๊ะ: </strong>{{ customer_detail.Cal }}</p>
-            <p><strong>เวลาที่ check bill: </strong></p><p>{{ customer_detail.customer_out }}</p>
-            <p><strong>ระยะเวลาที่รออาหาร: </strong>{{ customer_detail.WaitForFood }}</p>
+            <p><strong>Table number: </strong>{{ customer_detail.tableid }}</p>
+            <p><strong>Customer ID: </strong>{{ customer_detail.customer_id }}</p>
+            <p><strong>Amount of customer: </strong><li class="list-inline-item">{{ customer_detail.customer_amount }} person</li></p>
+            <p><strong>Customer in time: </strong>{{ customer_detail.customer_in|time:"g:i A"  }}</p>
+            <p><strong>Customer out time: </strong>{{ customer_detail.customer_out|time:"g:i A"  }}</p>
+            <p><strong>Waiting for food: </strong>{{ waiting_time_formatted }}</p>
+            <p><strong>Time spent: </strong><li class="list-inline-item">{{ time_spent_formatted }}</li></p>
         </div>
       </div>
 
