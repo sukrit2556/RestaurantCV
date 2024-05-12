@@ -378,7 +378,7 @@ def update_shared_dict():
             update_shared_dict_in_procress = False
     print("update_shared_dict stopped")
 
-def recognize_employee_face(shared_dict, todo_queue, known_face_encodings, known_face_names, stop_subprocess):
+def recognize_employee_face(shared_dict, todo_queue, known_face_encodings, known_face_names, stop_subprocess, known_employee):
     
     import face_recognition
     import time
@@ -404,51 +404,56 @@ def recognize_employee_face(shared_dict, todo_queue, known_face_encodings, known
                 # Pop items until the dictionary is empty
                 while filtered_dict:
                     key, value = filtered_dict.popitem()
-                    top_left = value.top_left
-                    bottom_right = value.bottom_right
-                    y_min = top_left[1]
-                    y_max = bottom_right[1]
-                    x_min = top_left[0]
-                    x_max = bottom_right[0]
-                    cropped_person = frame[y_min:y_max, x_min:x_max]
-                    cropped_person = cv2.cvtColor(cropped_person, cv2.COLOR_BGR2RGB)
+                    if value.fixed == False:
+                        top_left = value.top_left
+                        bottom_right = value.bottom_right
+                        y_min = top_left[1]
+                        y_max = bottom_right[1]
+                        x_min = top_left[0]
+                        x_max = bottom_right[0]
+                        cropped_person = frame[y_min:y_max, x_min:x_max]
+                        cropped_person = cv2.cvtColor(cropped_person, cv2.COLOR_BGR2RGB)
 
-                    cv2.imwrite("fuckthis.jpg", cropped_person)
-                    #find face location and encoding
-                    face_location = face_recognition.face_locations(cropped_person, model='hog')
+                        cv2.imwrite("fuckthis.jpg", cropped_person)
+                        #find face location and encoding
+                        face_location = face_recognition.face_locations(cropped_person, model='hog')
 
-                    face_encodings = face_recognition.face_encodings(cropped_person, face_location)
+                        face_encodings = face_recognition.face_encodings(cropped_person, face_location)
 
-                    #face comparing
-                    for face_encoding in face_encodings:
-                        # Compare face encoding with known faces
-                        matches = face_recognition.compare_faces(known_face_encodings, face_encoding)
-                        name = "Unknown"
+                        #face comparing
+                        for face_encoding in face_encodings:
+                            # Compare face encoding with known faces
+                            matches = face_recognition.compare_faces(known_face_encodings, face_encoding)
+                            name = "Unknown"
 
-                        # If a match is found, use the known face name
-                        if True in matches:
-                            first_match_index = matches.index(True)
-                            name = known_face_names[first_match_index]
+                            # If a match is found, use the known face name
+                            if True in matches:
+                                first_match_index = matches.index(True)
+                                name = known_face_names[first_match_index]
 
-                            #update shared dict part >>>
-                            if key in shared_dict:
-                                # Update the value of the key
-                                shared_dict[key].person_type = name
-                                shared_dict[key].fixed = True
-                                print('\033[91m' + 'I recognized someone!!!' + '\033[0m')
-                                print(shared_dict[key].person_type)
-                                print(f"found {name}")
-                                print(f"shared_dict[key].person_type = {shared_dict[key].person_type} fix = {shared_dict[key].fixed}")
-                                print("Updated shared_dict['{}']".format(key))
-                                cv2.imwrite("foundyou.jpg", cropped_person)
-
-                                break
+                                #update shared dict part >>>
+                                if key in shared_dict:
+                                    # Update the value of the key
+                                    print('\033[91m' + 'I recognized someone!!!' + '\033[0m')
+                                    print(f"found {name}")
+                                    print("Updated shared_dict['{}']".format(key))
+                                    known_employee[key] = name
+                                    cv2.imwrite("foundyou.jpg", cropped_person)
+                                    break
         print("Sub process is out of touch")
     except Exception as e:
         print("error: ", e)
         traceback.print_exc()
         stop_subprocess.set()
 
+def print_shared_key():
+    while not stop_thread:
+        for key, value in known_employee.items():
+            print(key, ":", value, sep=" ", end="")
+            print("   ",end="")
+        time.sleep(0.1)
+        print("\n")
+    print("print thread stopped")
 
 ####################### THREADING PROCESS {END} #######################
 ####################### THREADING PROCESS {END} #######################
@@ -492,6 +497,8 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
     thread4 = threading.Thread(target=combine_frame)
     thread5 = threading.Thread(target=record_customer_activities)
     thread6 = threading.Thread(target=update_shared_dict)
+    thread7 = threading.Thread(target=print_shared_key)
+    
     
     
 
@@ -585,7 +592,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
                     is_customer = count_table_people(horizon_center, vertical_center)
                     #print('\033[91m' + 'to classify unknown_customer' + '\033[0m')
                     #if person is customer
-                    classify_unknown_customer(local_dict, id, is_customer, frame_count, present_datetime, 
+                    classify_unknown_customer(local_dict, known_employee, id, is_customer, frame_count, present_datetime, 
                                               (horizon_center, vertical_center),(int(bb[0]), int(bb[1])), (int(bb[2]), int(bb[3])),)
                     
                     key_contain_in_frame.append(id)
@@ -595,16 +602,16 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
                         id = int(boxes[i].id.cpu().numpy()[0])
                         for pt1, pt2 in local_dict[id].all_edge():
                             cv2.line(frame_data, pt1, pt2, 
-                                     detection_colors[int(0 if local_dict[id].person_type == "customer" else (1 if local_dict[id].person_type == "customer" else 2))], thickness=4, lineType=cv2.LINE_AA)
+                                     detection_colors[int(0 if local_dict[id].person_type == "customer" else (1 if local_dict[id].person_type == "unknown" else 2))], thickness=4, lineType=cv2.LINE_AA)
                         cv2.rectangle(
                             frame_data,
                             (int(bb[0]), int(bb[1])),
                             (int(bb[2]), int(bb[3])),
-                            detection_colors[int(0 if local_dict[id].person_type == "customer" else (1 if local_dict[id].person_type == "customer" else 2))],
+                            detection_colors[int(0 if local_dict[id].person_type == "customer" else (1 if local_dict[id].person_type == "unknown" else 2))],
                             3,
                         )
                         cv2.rectangle(frame_data, (int(bb[0]), int(bb[1])), (int(bb[2]), int(bb[1]+30)), 
-                                      detection_colors[int(0 if local_dict[id].person_type == "customer" else (1 if local_dict[id].person_type == "customer" else 2))], -1) 
+                                      detection_colors[int(0 if local_dict[id].person_type == "customer" else (1 if local_dict[id].person_type == "unknown" else 2))], -1) 
                         cv2.putText(
                             frame_data,
                             class_list[int(clsID)] + " " + str(id),
@@ -703,6 +710,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
                 thread3.start()#check framerate
                 #thread4.start() #record video
                 thread6.start()
+                #thread7.start()
             # Terminate run when "Q" pressed
             if check_available_started and not thread1.is_alive():
                 thread1.start() #calculate total person
@@ -778,9 +786,10 @@ if __name__ == "__main__":
     shared_dict_update_queue = queue.Queue()
     face_recog_queue = manager.Queue()
     stop_subprocess = multiprocessing.Event()
+    known_employee = manager.dict()
 
     process = multiprocessing.Process(target=recognize_employee_face, 
-                                      args=(shared_dict, face_recog_queue, known_face_encodings, known_face_names, stop_subprocess))
+                                      args=(shared_dict, face_recog_queue, known_face_encodings, known_face_names, stop_subprocess, known_employee))
     process.start()
 
 

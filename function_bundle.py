@@ -455,7 +455,7 @@ def put_text_anywhere(frame, text_to_put_list:list, start_position_x, start_posi
         )
         start_position_y += 30
 
-def classify_unknown_customer(people_dict, id, is_customer, frame_count, present_datetime, center_coord, top_left, bottom_right):
+def classify_unknown_customer(people_dict, known_employee, id, is_customer, frame_count, present_datetime, center_coord, top_left, bottom_right):
 
     if is_customer:
         data = people_dict[id]
@@ -510,6 +510,14 @@ def classify_unknown_customer(people_dict, id, is_customer, frame_count, present
         data.person_type = "customer"
         data.fixed = True
         people_dict[id] = data
+    elif id in known_employee.keys():
+        data = people_dict[id]
+        data.person_type = known_employee[id]
+        data.fixed = True
+        people_dict[id] = data
+        del known_employee[id]
+
+
 
 def print_queue(queue):
     # Create a temporary list to store the items
