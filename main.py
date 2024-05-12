@@ -381,16 +381,12 @@ def update_shared_dict():
 def recognize_employee_face(shared_dict, todo_queue, known_face_encodings, known_face_names, stop_subprocess):
     
     import face_recognition
-    import dlib
     import time
-    #wait until update_shared_dict is started
-    #while update_shared_dict == False:
-        #sleep
+
     try:
         while not stop_subprocess.is_set():
             filtered_dict = {}
             while todo_queue.empty() and not stop_subprocess.is_set():
-                #print("subprocess waiting ...")
                 time.sleep(0.1)
             if not stop_subprocess.is_set():
                 #retrieve data 
@@ -403,13 +399,11 @@ def recognize_employee_face(shared_dict, todo_queue, known_face_encodings, known
                     if value.person_type == "unknown":
                         filtered_dict[key] = value
 
-                #key_to_change = []
 
                 #face recog part >>>
                 # Pop items until the dictionary is empty
                 while filtered_dict:
                     key, value = filtered_dict.popitem()
-                    #print(f"subprocess recognizing key {key} ")
                     top_left = value.top_left
                     bottom_right = value.bottom_right
                     y_min = top_left[1]
@@ -420,7 +414,6 @@ def recognize_employee_face(shared_dict, todo_queue, known_face_encodings, known
                     cropped_person = cv2.cvtColor(cropped_person, cv2.COLOR_BGR2RGB)
 
                     cv2.imwrite("fuckthis.jpg", cropped_person)
-                    #print(f"stop subprocess = {stop_subprocess.is_set()}")
                     #find face location and encoding
                     face_location = face_recognition.face_locations(cropped_person, model='hog')
 
@@ -442,9 +435,11 @@ def recognize_employee_face(shared_dict, todo_queue, known_face_encodings, known
                                 # Update the value of the key
                                 shared_dict[key].person_type = name
                                 shared_dict[key].fixed = True
+                                print('\033[91m' + 'I recognized someone!!!' + '\033[0m')
+                                print(shared_dict[key].person_type)
+                                print(f"found {name}")
                                 print(f"shared_dict[key].person_type = {shared_dict[key].person_type} fix = {shared_dict[key].fixed}")
                                 print("Updated shared_dict['{}']".format(key))
-                                print('\033[91m' + 'I recognized someone!!!' + '\033[0m')
                                 cv2.imwrite("foundyou.jpg", cropped_person)
 
                                 break
