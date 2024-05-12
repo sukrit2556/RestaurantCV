@@ -212,41 +212,52 @@ def draw_table_point(frame, availability_cache, list_point_all_table = table_poi
     ## draw and put text for each table
     for table_no, pts in enumerate(list_point_all_table):
         cv2.polylines(frame, [pts], isClosed=True, color=(0, 255, 0), thickness=2)
-        
+
+        #find leftest point
+        # Find the index of the point with the minimum x-coordinate (using axis=0 for row-wise comparison)
+        leftmost_index = np.argmin(pts[:, 0])
+
+        # Extract the leftmost point
+        leftmost_point = pts[leftmost_index]
         ##put text on each table
-        x_coord = pts[0][0]
-        y_coord = pts[0][1]
+        x_coord = leftmost_point[0]
+        y_coord = leftmost_point[1]
+        font = cv2.FONT_HERSHEY_PLAIN
         cv2.putText(frame, 
                     "Table " + str(table_no+1),
                     (x_coord,y_coord),
                     font,       #font name
-                    1,          #font scale
+                    1.5,          #font scale
                     (0,0,255),  #font color
-                    2           #font thickness
+                    2,          #font thickness
+                    cv2.LINE_AA
         )
         cv2.putText(frame, 
                     "persons: " + str(list_realtime_count[table_no]),
                     (x_coord,y_coord+20),
                     font,       #font name
-                    1,          #font scale
+                    1.5,          #font scale
                     (0,0,255),  #font color
-                    2           #font thickness
+                    2,          #font thickness
+                    cv2.LINE_AA
         )
         cv2.putText(frame, 
-                    "realtime_status: " + str("Unoccupied" if list_realtime_count[table_no] == 0 else "occupied"),
+                    "RT_status: " + str("Unoccupied" if list_realtime_count[table_no] == 0 else "occupied"),
                     (x_coord,y_coord+40),
                     font,       #font name
-                    1,          #font scale
+                    1.5,          #font scale
                     (0,0,255),  #font color
-                    2           #font thickness
+                    2,          #font thickness
+                    cv2.LINE_AA
         )
         cv2.putText(frame, 
                     "Real_status: " + (str(availability_cache[table_no]) if len(availability_cache) > 0 else ""),
                     (x_coord,y_coord+60),
                     font,       #font name
-                    1,          #font scale
+                    1.5,          #font scale
                     (0,0,255),  #font color
-                    2           #font thickness
+                    2,          #font thickness
+                    cv2.LINE_AA
         )
 
     return frame
@@ -478,22 +489,23 @@ def classify_unknown_customer(people_dict, id, is_customer, frame_count, present
         data.top_left = top_left
         data.bottom_right = bottom_right
         people_dict[id] = data
-
-    if (people_dict[id].probToBeCustomer > 0.5 and people_dict[id].person_type == "unknown"):
-        data = people_dict[id]
-        data.person_type = "customer"
-        people_dict[id] = data
-    elif (people_dict[id].probToBeCustomer < 0.5 and people_dict[id].person_type == "customer"):
-        data = people_dict[id]
-        data.person_type = "unknown"
-        people_dict[id] = data
+    if people_dict[id].fixed == False:
+        if (people_dict[id].probToBeCustomer > 0.5 and people_dict[id].person_type == "unknown"):
+            data = people_dict[id]
+            data.person_type = "customer"
+            people_dict[id] = data
+        elif (people_dict[id].probToBeCustomer < 0.5 and people_dict[id].person_type == "customer"):
+            data = people_dict[id]
+            data.person_type = "unknown"
+            people_dict[id] = data
     
 
 
     #fix it
     if (people_dict[id].probToBeCustomer > 0.5 and 
             people_dict[id].person_type == "customer" and 
-            (people_dict[id].dt_latest_found - people_dict[id].dt_first_found).total_seconds() > 20):
+            (people_dict[id].dt_latest_found - people_dict[id].dt_first_found).total_seconds() > 5
+            and people_dict[id].fixed == False):
         data = people_dict[id]
         data.person_type = "customer"
         data.fixed = True
@@ -512,8 +524,9 @@ def print_queue(queue):
         queue.put(item)
 
 
-def update_local_dict(local_dict, key_contain_in_frame):
-    keys_to_delete = [key for key in local_dict if key not in key_contain_in_frame]
+def update_local_dict(local_dict, key_contain_in_frame, now_frame):
+    #keys_to_delete = [key for key in local_dict if key not in key_contain_in_frame]
+    keys_to_delete = [key for key in local_dict if (now_frame - local_dict[key].frame_latest_found) > 8]
     for key in keys_to_delete:
         # If the key is not in the list of IDs, delete it from the dictionary
         del local_dict[key]
