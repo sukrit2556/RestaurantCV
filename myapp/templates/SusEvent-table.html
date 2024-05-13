@@ -8,6 +8,7 @@
     <!-- bootstrap -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+
     <!--style-->
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
@@ -110,7 +111,7 @@
           </li> -->
 
           <li class="nav-item list-butt">
-            <a href="{% url 'SusTable' %}" class="nav-link link-dark mb-2"  aria-current="page">
+            <a href="#" class="nav-link link-dark mb-2"  aria-current="page">
               <img src="{% static 'img/loupe1.png' %}" class="icon-bar me-2" alt="">
               Suspicious Events
             </a>
@@ -131,7 +132,7 @@
           </li>
 
           <li class="list-hov">
-            <a href="Dashboard" class="nav-link link-dark mb-2">
+            <a href="{% url 'Dashboard' %}" class="nav-link link-dark mb-2">
               <img src="{% static 'img/graph1.png' %}" class="icon-bar me-2" alt="">
               Dashboard
             </a>
@@ -141,15 +142,16 @@
       </div>
 </div> 
 <div class="col-md-9">
-  <div class="card mt-3 align-items-center" style="width: 920px; height: 450px;">
+
+  <div class="card align-items-center mt-3" style="width: 920px; height: 450px;">
       <div class="card-body text-center">
           <div style="max-height: 420px; overflow-y: auto; ">
               <table class="table table-hover text-nowrap mx-3" style="width: 850px;">
                   <thead>
                       <tr>
-                          <th scope="col" style="width: 10%">Event No.</th>
+                          <th scope="col" style="width: 10%">Event number</th>
                           <th scope="col" style="width: 15%">Type</th>
-                          <th scope="col" style="width: 15%">Where</th>
+                          <th scope="col" style="width: 15%">Place</th>
                           <th scope="col" style="width: 20%">Date/Time</th>
                           <th scope="col" style="width: 10%">Employee ID</th>
                           <th scope="col" style="width: 15%">Video</th>
@@ -163,7 +165,7 @@
                         <td>{{ event.sus_id }}</td>
                         <td>{% if event.sus_type == 1 %}Employee{% else %}Drawer{% endif %}</td>
                         <td>{% if event.sus_type == 0 %}Cashier{% else %}Table no. {{ event.sus_where }}{% endif %}</td>
-                        <td>{{ event.sus_datetime }}</td>
+                        <td>{{ event.sus_datetime|date:"F j, Y g:i A"  }}</td>
                         <td>{{ event.sus_employeeid }}</td>
                         <td>
                           <!-- Button trigger modal -->
@@ -175,21 +177,25 @@
                             <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
                               <div class="modal-content" style="width: 700px;">
                                 <div class="modal-header">
-                                  <h5 class="modal-title" id="exampleModalLabel">{{ event.sus_id }}</h5>
+                                  <h5 class="modal-title" id="exampleModalLabel">Event number {{ event.sus_id }}</h5>
                                   <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                 </div>
                                 <div class="modal-body">
-                                  <video width="400" controls style="width: 650px; height: 350px;">
-                                    <source src="{{ event.sus_video }}" type="video/mp4">
-                                    Your browser does not support HTML video.
-                                  </video>
+                                  {% if customer_detail.captured_video == 1 %}
+                                    <video width="400" controls style="width: 650px; height: 350px;">
+                                      <source src="{{ event.sus_video }}" type="video/mp4">
+                                      Your browser does not support HTML video.
+                                    </video>
+                                  {% else %}
+                                      <p>No captured video available.</p>
+                                  {% endif %}
                                 </div>
                               </div>
                             </div>
                           </div>
                         </td>
                         <td>
-                          <button type="button" onclick="resolveEvent({{ event.sus_id }})" style="border-radius: 50px; background-color: rgb(197, 97, 97); border-color: rgb(197, 97, 97);" class="btn btn-dark">
+                          <button type="button" onclick="confirmResolve({{ event.sus_id }})" style="border-radius: 50px; background-color: rgb(197, 97, 97); border-color: rgb(197, 97, 97);" class="btn btn-dark">
                             Resolve
                           </button>
                         </td>
@@ -225,7 +231,36 @@
           console.error('Error:', error);
       });
   }
+</script>
+<script>
+  function confirmResolve(sus_id) {
+      if (confirm("Are you sure you want to resolve this event?")) {
+          resolveEvent(sus_id);
+      }
+  }
+  
+  function resolveEvent(sus_id) {
+      fetch(`/resolve_suspicious_event/${sus_id}/`, {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': '{{ csrf_token }}'
+          }
+      })
+      .then(response => {
+          if (response.ok) {
+              // Reload the page after resolving the event
+              location.reload();
+          } else {
+              console.error('Failed to resolve the suspicious event.');
+          }
+      })
+      .catch(error => {
+          console.error('Error:', error);
+      });
+  }
   </script>
+  
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
 </div>
 </body>

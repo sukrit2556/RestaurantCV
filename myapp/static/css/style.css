@@ -123,5 +123,6 @@ a:active { text-decoration: none; }
     color: rgb(179, 179, 179);
 }
 .link-d:hover {
-    color: rgb(64, 128, 125);
+    color: #40807d;
 }
+

@@ -23,5 +23,6 @@ urlpatterns = [
     path('menu/ListTable/EditEm/<int:id>', views.EditEm, name='EditEm'),
     path('delete_employee/<int:employee_id>/', views.delete_employee, name='delete_employee'),
     path('menu/ListTable/AddEM/', views.AddEm, name='AddEm'),
-     path('resolve_suspicious_event/<int:sus_id>/', views.resolve_suspicious_event, name='resolve_suspicious_event'),
+    path('resolve_suspicious_event/<int:sus_id>/', views.resolve_suspicious_event, name='resolve_suspicious_event'),
+    path('menu/Dashboard',views.Dashboard, name='Dashboard'),
     ]

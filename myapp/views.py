@@ -15,6 +15,7 @@ from django.utils.text import slugify
 from datetime import datetime
 
 
+
 def resolve_suspicious_event(request, sus_id):
     try:
         suspicious_event = SuspiciousEvents.objects.get(sus_id=sus_id)
@@ -51,8 +52,40 @@ def menu(request):
 
 def CustDetail(request, id):
     customer_detail = CustomerEvents.objects.get(customer_id=id)
+
+    customer_in = customer_detail.customer_in
+    customer_out = customer_detail.customer_out
+    time_getFood = customer_detail.time_getfood
+
+    if customer_out:
+        time_spent = customer_out - customer_in
+
+        # Convert time_spent to hours and minutes
+        hours, remainder = divmod(time_spent.seconds, 3600)
+        minutes, _ = divmod(remainder, 60)
+
+        # Format the output
+        time_spent_formatted = f"{hours} hours and {minutes} minutes"
+    else:
+        # If customer_out is None, set time_spent_formatted to a default value
+        time_spent_formatted = "Customer still present"
+
+    # Pass the formatted time spent to the template context
+    if customer_in and time_getFood:
+        # Calculate the waiting time for food
+        waiting_time_for_food = time_getFood - customer_in
+
+        # Convert waiting_time_for_food to minutes
+        waiting_time_minutes = waiting_time_for_food.seconds // 60
+
+        # Format the output
+        waiting_time_formatted = f"{waiting_time_minutes} minutes"
+    else:
+        waiting_time_formatted = "N/A"  # Default value if either customer_in or time_getFood is None
     context = {
         'customer_detail': customer_detail,
+        'time_spent_formatted': time_spent_formatted,
+        'waiting_time_formatted': waiting_time_formatted
     }
     return render(request, 'CustEvent-detail.html', context)
 
@@ -148,7 +181,7 @@ def AddEm(request):
         handle_uploaded_file(photo, new_filename)
         
         # Save the photo with the /mock_media/ path in the database
-        photo_path = os.path.join('/mock_media/', new_filename)
+        photo_path = os.path.join('/mock_media/employee_face', new_filename)
         
         # Create a new Employee object and save it to the database
         new_employee = Employee.objects.create(
@@ -215,7 +248,7 @@ def EditEm(request, id):
             new_filename = generate_unique_filename(photo_file.name)
             handle_uploaded_file(photo_file, new_filename)
             # Update employee_detail with the new filename
-            employee_detail.employee_image = os.path.join('\mock_media', new_filename)
+            employee_detail.employee_image = os.path.join('\mock_media\employee_face', new_filename)
         
         # Save the updated employee object
         employee_detail.save()
@@ -230,9 +263,97 @@ def delete_employee(request, employee_id):
     employee.delete()
     return redirect('ListTable')
 
+from django.db.models import Sum, Count
+from django.db.models.functions import ExtractMonth, ExtractYear
+import calendar
+from django.db.models import F, ExpressionWrapper, DurationField
+from django.utils import timezone
+from datetime import timedelta
+from django.db.models import Avg
+from django.db.models.functions import ExtractDay
+from django.db.models import Avg, ExpressionWrapper, fields, F, DurationField, Sum
+from django.db.models.functions import TruncDate
+from datetime import timedelta
+
+
 def Dashboard(request):
+    # Fetching data from the CustomerEvents table and aggregating the total customer amount per month
+    customers = CustomerEvents.objects.annotate(
+        month=ExtractMonth('customer_in'),
+        year=ExtractYear('customer_in')
+    ).values('month', 'year').annotate(
+        total_customers=Sum('customer_amount')
+    )
+
+    # Fetching data for the count of records for each sus_type (0 for drawer type and 1 for employee type)
+    sus_type_counts = SuspiciousEvents.objects.values('sus_type').annotate(count=Count('*'))
+
+    # Extracting the count for each sus_type
+    drawer_type_count = 0
+    employee_type_count = 0
+    for item in sus_type_counts:
+        if item['sus_type'] == 0:
+            drawer_type_count = item['count']
+        elif item['sus_type'] == 1:
+            employee_type_count = item['count']
+
+    # Fetching data for the count of records for each sus_status (resolved and unresolved)
+    sus_status_counts = SuspiciousEvents.objects.values('sus_status').annotate(count=Count('*'))
+
+    # Extracting the count for resolved and unresolved events
+    resolved_count = unresolved_count = 0
+    for item in sus_status_counts:
+        if item['sus_status'] == 0:
+            resolved_count = item['count']
+        elif item['sus_status'] == 1:
+            unresolved_count = item['count']
+
     customer_events = CustomerEvents.objects.all()
+
+    # Calculate waiting time for each event and group by date
+    waiting_data = {}  # Dictionary to store waiting time per day
+    for event in customer_events:
+        day = event.customer_in.date()  # Get the date of the event
+        if event.time_getfood:  # Check if food was served
+            waiting_time = event.time_getfood - event.customer_in  # Calculate waiting time
+            if day in waiting_data:
+                waiting_data[day].append(waiting_time.total_seconds() / 60)  # Convert to minutes
+            else:
+                waiting_data[day] = [waiting_time.total_seconds() / 60]  # Convert to minutes
+
+    # Calculate average waiting time for each day
+    avg_waiting_per_day = {}
+    for day, waiting_times in waiting_data.items():
+        avg_waiting_per_day[day] = sum(waiting_times) / len(waiting_times)
+
+    # Sort the dictionary by date if needed
+    avg_waiting_per_day = dict(sorted(avg_waiting_per_day.items()))
+
+    # Prepare data for passing to the template
+    waiting_labels = list(avg_waiting_per_day.keys())
+    waiting_data = list(avg_waiting_per_day.values())
+
+    # Extracting data for the line graph
+    labels = [calendar.month_name[entry['month']] + ' ' + str(entry['year']) for entry in customers]
+    data = [entry['total_customers'] for entry in customers]
+
+    # Extracting data for the top months with the highest service usage
+    top_months = CustomerEvents.objects.annotate(
+        month=ExtractMonth('customer_in')
+    ).values('month').annotate(
+        total_customerss=Sum('customer_amount')
+    ).order_by('-total_customerss')[:3]
+
     context = {
-        'customer_events': customer_events
+        'labels': labels,
+        'data': data,
+        'top_months': top_months,
+        'drawer_count': drawer_type_count,
+        'employee_count': employee_type_count,
+        'resolved_count': resolved_count,
+        'unresolved_count': unresolved_count,
+        'waiting_labels': waiting_labels,
+        'waiting_data': waiting_data,
     }
-    return render(request,"Dashboard.html",context)
+
+    return render(request, 'Dashboard.html', context)
