@@ -442,8 +442,19 @@ def get_media_abs_path(customerID, filename):
     full_image_file_path = os.path.join(new_folder_path, filename)
     return full_image_file_path
 
-def get_media_relate_path(customerID, filename):
+def get_customer_vid_DB_path(customerID, filename):
     relative_image_file_path = os.path.normpath(os.path.join(config['save_customer_path_child'], str(customerID), filename))
+    return relative_image_file_path
+
+def relate2abs_cvt(filename, related_path_to_save):
+    media_directory = os.path.join(os.getcwd(), related_path_to_save)
+    new_folder_path = os.path.normpath(media_directory)
+    os.makedirs(new_folder_path, exist_ok=True)
+    full_image_file_path = os.path.join(new_folder_path, filename)
+    return full_image_file_path
+
+def get_djangoapp_path(filename, related_path_to_save):
+    relative_image_file_path = os.path.normpath(os.path.join(related_path_to_save, filename))
     return relative_image_file_path
 
 def put_text_anywhere(frame, text_to_put_list:list, start_position_x, start_position_y):
@@ -545,9 +556,10 @@ def update_local_dict(local_dict, key_contain_in_frame, now_frame):
 if __name__ == "__main__":
     #update_db("test", "name", "sukei", ["address = 'Highway21'", "text2 = 'suk'"])
     # Define the relative path to "djangoAPP/mock_media"
-    i = 0
-    print(plotted_points_recording)
-    y_min, y_max = plotted_points_recording[i][0][1], plotted_points_recording[i][2][1]
-    x_min, x_max = plotted_points_recording[i][0][0], plotted_points_recording[i][2][0]
-    print(y_min, y_max)
-    print(x_min, x_max)
+    person_in_cashier_now = ""
+    field_list = ["sus_type", "sus_employeeID", "sus_video", "sus_status", "sus_datetime", "sus_where"]
+    value_list = [0, ]
+    #insert_db("suspicious_events", field_list, value_list)
+    person_name = "20240511194338"
+    _, employeeID = select_db('employee', ['employee_ID'], [f"employee_image LIKE '%{person_name}%'"])
+    pass

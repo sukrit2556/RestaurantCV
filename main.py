@@ -28,6 +28,8 @@ check_dimsum_started = False
 fakeCamFrame = None
 simulate_status = None
 update_shared_dict_in_procress = False
+stop_check_drawer_open = False
+person_in_cashier_cache = None
 
 
 ####################### THREADING PROCESS {BEGIN} #######################
@@ -311,7 +313,7 @@ def record_customer_activities(): #must start after check_available started only
                                                 ["created_datetime = (" + f"{select_db('customer_events', ['MAX(created_datetime)'], [f'tableID = {i+1}'])[0]})", f"tableID = {i+1}"])
                         image_full_file_path = get_media_abs_path(customerID[0][0], "wrapped_up.mp4")
                         abs_path[i] = image_full_file_path      #save absolute path dir to video to list
-                        image_relate_file_path = get_media_relate_path(customerID[0][0], "wrapped_up.mp4")
+                        image_relate_file_path = get_customer_vid_DB_path(customerID[0][0], "wrapped_up.mp4")
                         relate_path[i] = image_relate_file_path
                         
                         record_status[i] = 1
@@ -398,6 +400,7 @@ def recognize_employee_face(shared_dict, todo_queue, known_face_encodings, known
     
     import face_recognition
     import time
+    i = 0
 
     try:
         while not stop_subprocess.is_set():
@@ -432,18 +435,30 @@ def recognize_employee_face(shared_dict, todo_queue, known_face_encodings, known
                         x_min = top_left[0]
                         x_max = bottom_right[0]
                         cropped_person = frame[y_min:y_max, x_min:x_max]
+                        cropped_person_BGR = cropped_person
                         cropped_person = cv2.cvtColor(cropped_person, cv2.COLOR_BGR2RGB)
 
-                        cv2.imwrite("fuckthis.jpg", cropped_person)
+                        cv2.imwrite("fuckthis.jpg", cropped_person_BGR)
                         #find face location and encoding
                         face_location = face_recognition.face_locations(cropped_person, model='hog')
 
                         face_encodings = face_recognition.face_encodings(cropped_person, face_location)
 
                         #face comparing
-                        for face_encoding in face_encodings:
+                        for itr, face_encoding in enumerate(face_encodings):
+
+                            """i += 1
+                            media_directory = os.path.join(os.getcwd(), "employee_face_result")
+                            new_folder_path = os.path.normpath(media_directory)
+                            os.makedirs(new_folder_path, exist_ok=True)
+                            filename = f"{i}.jpg"
+                            path_to_file = os.path.join(new_folder_path, filename)
+                            print(path_to_file)
+                            cv2.imwrite(path_to_file, cropped_person_BGR)"""
+
                             # Compare face encoding with known faces
-                            matches = face_recognition.compare_faces(known_face_encodings, face_encoding)
+                            matches = face_recognition.compare_faces(known_face_encodings, face_encoding, tolerance = 0.4)
+                            print(matches)
                             name = "Unknown"
 
                             # If a match is found, use the known face name
@@ -453,11 +468,11 @@ def recognize_employee_face(shared_dict, todo_queue, known_face_encodings, known
 
                                 #update shared dict part >>>
                                 if key in shared_dict:
+                                    
                                     # Update the value of the key
                                     print('\033[91m' + 'I recognized someone!!!' + '\033[0m')
                                     print(f"found {name} at id {key}")
                                     known_employee[key] = name
-                                    cv2.imwrite("foundyou.jpg", cropped_person)
                                     break
             keys_to_delete = set(known_employee.keys()) - set(shared_dict.keys())
             for key in keys_to_delete:
@@ -468,6 +483,85 @@ def recognize_employee_face(shared_dict, todo_queue, known_face_encodings, known
         traceback.print_exc()
         stop_subprocess.set()
     print('\033[93m' + f'[Subprocess] face recognition stopped' + '\033[0m')
+
+def check_drawer_open():
+
+    model = YOLO(config['drawer_model_path'])
+    status_record = False
+    open_found = 0
+    itr = 5
+    status_before_is_open = False
+    status_now_is_open = False
+    y_min = 808
+    y_max = 1080
+    x_min = 372
+    x_max = 869
+    width = x_max - x_min
+    height = y_max - y_min
+    employeeID = None
+    #start loop
+    
+    while not stop_thread and not stop_check_drawer_open:
+        person_in_cashier_now = person_in_cashier_cache #id
+                
+        #detect if drawer is opened more than 5 frame
+        for _ in range (itr):
+            cashier_area = blank_frame_cache[y_min:y_max, x_min:x_max]
+
+            #use model detection
+            cv2.imshow("cashier", cashier_area)
+            results = model(source=[cashier_area], conf=0.6, show=False, save=False, classes=[0], verbose=True)
+
+            # Convert tensor array to numpy
+            if len(results[0]) > 0:
+                open_found += 1
+
+        #translate the status and reset open_found
+        if open_found > itr/2:
+            status_before_is_open = status_now_is_open
+            status_now_is_open = True
+        else:
+            status_before_is_open = status_now_is_open
+            status_now_is_open = False
+        open_found = 0
+        
+
+        #if drawer were detected open
+        if status_before_is_open == False and status_now_is_open == True:
+            
+            #set name path with datetimenow
+            video_filename = present_datetime.strftime("%Y%m%d%H%M%S" + ".mp4")
+            path_to_save_PC = "../djangoAPP/mock_media/drawer_sus"
+            path_to_save_DB = "/mock_media/drawer_sus"
+            absolute_path = relate2abs_cvt(video_filename, path_to_save_PC)
+            related_path = get_djangoapp_path(video_filename, path_to_save_DB)
+            #initializing video writer
+            cashier_record = cv2.VideoWriter(absolute_path, cv2.VideoWriter_fourcc(*'H264'), 7, (width, height)) 
+            cashier_record.write()
+            status_record = not status_record
+            # >>>>> insert suspicious in DB
+            # >>>>> db_id = select()
+
+        elif status_before_is_open == True and status_now_is_open == True:
+            cashier_record.write()
+            if person_in_cashier_now in shared_dict:
+                #if figured out what employee was, then just let go
+                if shared_dict[person_in_cashier_now].person_type == "unknown" and employeeID != None: #if figured out what employee was, then just let go
+                    pass
+
+                elif shared_dict[person_in_cashier_now].person_type != "unknown" and employeeID == None:
+                    person_name = shared_dict[person_in_cashier_now].person_type
+                    _, employeeID = select_db('employee', ['employee_ID'], [f"employee_image LIKE '%{person_name}%'"])
+                    #>>>>>>>update database for employee name
+
+        elif status_before_is_open == True and status_now_is_open == False:
+            status_record = not status_record
+            employeeID = None
+            cashier_record.release()
+
+        
+        
+
 
 def print_shared_key():
     while not stop_thread:
@@ -746,6 +840,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
                 stop_thread = True
                 end_recording = True
                 stop_subprocess.set()
+                print('\033[91m' + f'>> [User action] stop all processes' + '\033[0m')
                 break
     print('\033[93m' + f'[Main Loop] Ended!' + '\033[0m')
 

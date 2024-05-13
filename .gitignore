@@ -6,8 +6,10 @@ runs/
 utils/
 weights/*
 !weights/205trainset_400epoch_model_S.pt
-
+!weights/drawer_open_300Epoch_model_S.pt
+!weights/drawer_open_out_model_s.pt
 output.txt
 output.csv
 test.py
 .*
+employee_face_result/
