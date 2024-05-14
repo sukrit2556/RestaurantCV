@@ -177,19 +177,22 @@
                 <table class="table table-hover text-nowrap mx-3" id="myTable" style="width: 850px;">
                     <thead>
                         <tr>
-                            <th scope="col" style="width: 30%">Create date/time</th>
+                            <th scope="col" style="width: 30%">No.</th>
+                            <th scope="col" style="width: 30%">Date</th>
                             <th scope="col" style="width: 30%">Duration</th>
                             <th scope="col" style="width: 20%">Table number</th>
+                            <th scope="col" style="width: 30%">Create date/time</th>
                             <th scope="col" style="width: 20%">More</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for customer_event in customer_events %}
                         <tr>
-                            <td>{{ customer_event.created_datetime|date:"F j, Y g:i A" }}</td>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ customer_event.customer_in|date:"F j, Y" }}</td>
                             <td>
                               {% if customer_event.customer_in %}
-                              {{ customer_event.customer_in|date:"F j, Y g:i A" }}
+                              {{ customer_event.customer_in|date:"g:i A" }}
                               {% else %}
                                   None
                               {% endif %}
@@ -201,6 +204,7 @@
                               {% endif %}
                             </td>
                             <td>{{ customer_event.tableid }}</td>
+                            <td>{{ customer_event.created_datetime|date:"F j, Y g:i A" }}</td>
                             <td><a href="/menu/CustTable/CustDetail/{{ customer_event.customer_id }}" class="link-d">Details</a></td>
                         </tr>
                         {% endfor %}
