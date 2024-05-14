@@ -6,13 +6,15 @@ drawer_model_path: "weights/drawer_open_300Epoch_model_S.pt"
 save_customer_path_parent: "/djangoAPP"
 save_customer_path_child: "/mock_media/customer"
 
+save_preview: False
+
 source: video_frame
 frame_skip: 1
 
 video_frame:
   source: video
   simulate: True
-  url: "inference/videos/occupied_test_full.mp4"
+  url: "inference/videos/restaurantFull.mp4"
 
 live_frame:
   source: live_frame

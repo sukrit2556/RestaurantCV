@@ -179,6 +179,7 @@ def now_frame_rate():
     print('\033[93m' + 'now_frame_rate stopped' + '\033[0m')
 
 def combine_frame():
+    print('\033[91m' + '** start saving preview as video' + '\033[0m')
     completed_frames = None
     global stop_thread
     # Define video resolution and frame rate
@@ -458,7 +459,6 @@ def recognize_employee_face(shared_dict, todo_queue, known_face_encodings, known
 
                             # Compare face encoding with known faces
                             matches = face_recognition.compare_faces(known_face_encodings, face_encoding, tolerance = 0.4)
-                            print(matches)
                             name = "Unknown"
 
                             # If a match is found, use the known face name
@@ -586,6 +586,17 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
     global stop_thread, frame_count, fps, frame_rate, present_datetime, list_realtime_count_cache, object2, fakeCamFrame, simulate_status, end_recording
     global blank_frame_cache, total_frame_count
 
+    #delete incomplete data before start program
+    i = "0000-00-00 00:00:00"
+    condition_list = [f"customer_OUT = '{i}'"]
+    try:
+        delete_data_db("customer_events", condition_list)
+    except Exception as e:
+        print('\033[91m' + f"error: {e}" + '\033[0m')
+        stop_thread = True
+        stop_subprocess.set()
+        exit()
+
     ### Start reading frame ###
     if not simulate and  not cap.isOpened():
         print("Cannot open camera")
@@ -606,11 +617,6 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
             print("Cannot open camera")
             stop_thread = True
             sys.exit()
-
-
-    i = "0000-00-00 00:00:00"
-    condition_list = [f"customer_OUT = '{i}'"]
-    delete_data_db("customer_events", condition_list)
 
     thread1 = threading.Thread(target=calculate_real_people_total)
     thread2 = threading.Thread(target=check_available)
@@ -788,13 +794,14 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
             list_realtime_count_cache = list_realtime_count.copy()
             reset_people_count()
             
-            
-            #object1.add_frame(frame_data) # uncomment without recording cause memory leak!
+            if save_preview:
+                object1.add_frame(frame_data) # uncomment without recording cause memory leak!
 
             if frame_count == 1:
                 thread2.start() #check availability
                 thread3.start()#check framerate
-                #thread4.start() #record video
+                if save_preview:
+                    thread4.start() #record video
                 thread6.start()
             #if frame_count == 20:
                 #thread7.start()
@@ -851,7 +858,8 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
     thread3.join() if thread3.is_alive() else None
     thread2.join() if thread2.is_alive() else None
     thread1.join()  if thread1.is_alive() else None
-    #thread4.join() # When everything done, release the capture
+    if save_preview:
+        thread4.join() # When everything done, release the capture
     thread5.join() if thread5.is_alive() else None
     thread6.join() if thread6.is_alive() else None
 

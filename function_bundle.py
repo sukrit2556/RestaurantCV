@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 import random
 from ultralytics import YOLO
 import os
+import traceback
 
 
 import mysql.connector
@@ -186,6 +187,8 @@ for key, value in  config['table_coord_for_recording'].items():
 
 plotted_points_recording = np.array(plotted_points, dtype=np.int32)
 
+save_preview = config['save_preview']
+
 
 
 
@@ -322,6 +325,7 @@ def connect_db():
         database="restaurant"
         )
     return mydb
+
 
 def insert_db(table_name, field_list, value_list):
     mydb = connect_db()
