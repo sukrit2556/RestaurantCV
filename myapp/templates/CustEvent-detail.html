@@ -1,44 +1,50 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- bootstrap -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-    <script>
-       $(document).ready(function(){
-          $('#myCollapsible').collapse('toggle');
-       });
-    </script>
-    <!--style-->
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
-    <!--fonts-->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Prompt&display=swap" rel="stylesheet">
-    <link rel="icon" href="img/tab_logo.png">
-    <!----->
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="description" content="">
-        <meta name="author" content="Mark Otto, Jacob Thornton, and Bootstrap contributors">
-        <meta name="generator" content="Hugo 0.84.0">
-    
-        <link rel="canonical" href="https://getbootstrap.com/docs/5.0/examples/sidebars/">
-    
-        
-    
-        <!-- Bootstrap core CSS -->
-    <link href="/docs/5.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
-    
-        <!-- Favicons -->
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p"
+    crossorigin="anonymous"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  <script>
+    $(document).ready(function () {
+      $('#myCollapsible').collapse('toggle');
+    });
+  </script>
+  <!--style-->
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+  <!--fonts-->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt&display=swap" rel="stylesheet">
+  <link rel="icon" href="img/tab_logo.png">
+  <!----->
+
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="Mark Otto, Jacob Thornton, and Bootstrap contributors">
+    <meta name="generator" content="Hugo 0.84.0">
+
+    <link rel="canonical" href="https://getbootstrap.com/docs/5.0/examples/sidebars/">
+
+
+
+    <!-- Bootstrap core CSS -->
+    <link href="/docs/5.0/dist/css/bootstrap.min.css" rel="stylesheet"
+      integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+
+    <!-- Favicons -->
     <link rel="apple-touch-icon" href="/docs/5.0/assets/img/favicons/apple-touch-icon.png" sizes="180x180">
     <link rel="icon" href="/docs/5.0/assets/img/favicons/favicon-32x32.png" sizes="32x32" type="image/png">
     <link rel="icon" href="/docs/5.0/assets/img/favicons/favicon-16x16.png" sizes="16x16" type="image/png">
@@ -46,59 +52,60 @@
     <link rel="mask-icon" href="/docs/5.0/assets/img/favicons/safari-pinned-tab.svg" color="#7952b3">
     <link rel="icon" href="/docs/5.0/assets/img/favicons/favicon.ico">
     <meta name="theme-color" content="#7952b3">
-    
-    
-        <style>
-          .bd-placeholder-img {
-            font-size: 1.125rem;
-            text-anchor: middle;
-            -webkit-user-select: none;
-            -moz-user-select: none;
-            user-select: none;
-          }
-    
-          @media (min-width: 768px) {
-            .bd-placeholder-img-lg {
-              font-size: 3.5rem;
-            }
-          }
-        </style>
-    
-        
-        <!-- Custom styles for this template -->
-        <link href="sidebars.css" rel="stylesheet">
-      </head>
-    <title>Computer vision for restuarant | Menu</title>
+
+
+    <style>
+      .bd-placeholder-img {
+        font-size: 1.125rem;
+        text-anchor: middle;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        user-select: none;
+      }
+
+      @media (min-width: 768px) {
+        .bd-placeholder-img-lg {
+          font-size: 3.5rem;
+        }
+      }
+    </style>
+
+
+    <!-- Custom styles for this template -->
+    <link href="sidebars.css" rel="stylesheet">
+  </head>
+  <title>Computer vision for restuarant | Menu</title>
 </head>
 
 <body>
-    
 
-<!-- Image and text -->
-<nav class="navbar navbar-bg py-4">
-  <a class="navbar-brand mx-3">
-    <div class="font-nav">
-      <img src="{% static 'img/eye1.png' %}" width="30" height="30" class="d-inline-block align-top" alt="">
-      <b>Computer vision for restuarant</b>
-    </div>
-  </a>
-  <div class="mx-3">
-    <a href="login" class="font-log op-butt align-top">
-      <b>Logout</b>
+
+  <!-- Image and text -->
+  <nav class="navbar navbar-bg py-4">
+    <a class="navbar-brand mx-3">
+      <div class="font-nav">
+        <img src="{% static 'img/eye1.png' %}" width="30" height="30" class="d-inline-block align-top" alt="">
+        <b>Computer vision for restuarant</b>
+      </div>
     </a>
-    <b style="color: white;">|</b>
-    <b style="color: white;">Firstname Surname</b>
-    <!--<img class="rounded-circle" width="30" height="30" alt="" src="img/bl-pic.webp" />-->
-  </div>
-</nav>
-
-<div class="row">
-<div class="col-md-3">
-    <div class="d-flex flex-column flex-shrink-0 p-3 bg-light" style="max-width: 100%; height: 565px;">
-      <a href="{% url 'menu' %}" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto link-dark text-decoration-none">
-        <img src="{% static 'img/menu.png' %}" class="menu-bar me-2" alt="">
-        <span class="fs-4 align-items-center"><b>Menu</b></span>
+    <div class="mx-3">
+      <a href="login" class="font-log op-butt align-top">
+        <b>Logout</b>
       </a>
+      <b style="color: white;">|</b>
+      <b style="color: white;">Firstname Surname</b>
+      <!--<img class="rounded-circle" width="30" height="30" alt="" src="img/bl-pic.webp" />-->
+    </div>
+  </nav>
+
+  <div class="row">
+    <div class="col-md-3">
+      <div class="d-flex flex-column flex-shrink-0 p-3 bg-light" style="max-width: 100%; height: 565px;">
+        <a href="{% url 'menu' %}"
+          class="d-flex align-items-center mb-3 mb-md-0 me-md-auto link-dark text-decoration-none">
+          <img src="{% static 'img/menu.png' %}" class="menu-bar me-2" alt="">
+          <span class="fs-4 align-items-center"><b>Menu</b></span>
+        </a>
         <hr>
         <ul class="nav nav-pills flex-column mb-auto">
 
@@ -109,7 +116,7 @@
             </a>
           </li>
 
-<!--          <li class="list-hov">
+          <!--          <li class="list-hov">
             <a href="{% url 'EmTable' %}" class="nav-link link-dark mb-2">
               <img src="{% static 'img/rest1.png' %}" class="icon-bar me-2" alt="">
               Employees Events
@@ -145,77 +152,93 @@
           </li>
 
         </ul>
-    </div>
-</div> 
-
-<div class="col-9">
-  <div class="row mt-3">
-    <div class="col-md-8">
-      
-      <div id="accordion">
-        <div class="card">
-          <div class="card-header" style="height: 50px;" id="headingOne">
-            <h5 class="mb-0">
-              <button class="btn btn-link" style="color: rgb(151, 151, 151); text-decoration: none;" data-toggle="collapse" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-                Frame GetFood
-              </button>
-            </h5>
-          </div>
-      
-          <div id="collapseOne" class="collapse show" aria-labelledby="headingOne" data-parent="#accordion">
-            <div class="card-body text-center">
-              {% if customer_detail.getfood_frame %}
-                  <img src="{{ customer_detail.getfood_frame }}" class="align-items-center d-block img-fluid" style="max-width: 575px; max-height: 350px;" alt="...">
-              {% else %}
-                  <p>No image available.</p>
-              {% endif %}
-            </div>
-          </div>
-        </div>
-        
-        <div class="card">
-          <div class="card-header" style="height: 50px;" id="headingTwo">
-            <h5 class="mb-0">
-              <button class="btn btn-link collapsed" style="color: rgb(151, 151, 151); text-decoration: none;" data-toggle="collapse" data-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
-                Video
-              </button>
-            </h5>
-          </div>
-          <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordion">
-            <div class="card-body text-center">
-              {% if customer_detail.captured_video %}
-                  <video width="400" controls style="width: 575px; height: 350px;">
-                      <source src="{{ customer_detail.captured_video }}" type="video/mp4">
-                      Your browser does not support HTML video.
-                  </video>
-              {% else %}
-                  <p>No captured video available.</p>
-              {% endif %}
-            </div>
-          </div>
-        </div>
       </div>
-
     </div>
-      <div class="card" style="width: 280px; height: 450px;">
-        <div class="card-body">
+
+    <div class="col-9">
+      <div class="row mt-3">
+        <div class="col-md-8">
+
+          <div id="accordion">
+            <div class="card">
+              <div class="card-header" style="height: 50px; text-align: center; padding: 0;" id="headingTwo">
+                <button class="btn btn-link collapsed"
+                  style="color: rgb(151, 151, 151); text-decoration: none; padding: 0; height:100%; width: 100%;"
+                  data-toggle="collapse" data-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                  <div class="d-flex justify-content-between">
+                    <span style="padding: 0 20px;">Got food frame</span>
+                    <span style="padding: 0 20px;">▼</span>
+                  </div>
+                </button>
+              </div>
+
+              <div id="collapseOne" class="collapse show" aria-labelledby="headingOne" data-parent="#accordion">
+                <div class="card-body text-center">
+                  {% if customer_detail.getfood_frame %}
+                  <img src="{{ customer_detail.getfood_frame }}" class="align-items-center d-block img-fluid"
+                    style="max-width: 575px; max-height: 350px;" alt="...">
+                  {% else %}
+                  <p>No image available.</p>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header" style="height: 50px; text-align: center; padding: 0;" id="headingTwo">
+                <button class="btn btn-link collapsed"
+                  style="color: rgb(151, 151, 151); text-decoration: none; padding: 0; height:100%; width: 100%;"
+                  data-toggle="collapse" data-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                  <div class="d-flex justify-content-between">
+                    <span style="padding: 0 20px;">Video</span>
+                    <span style="padding: 0 20px;">▼</span>
+                  </div>
+                </button>
+              </div>
+
+
+
+
+              <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordion">
+                <div class="card-body text-center">
+                  {% if customer_detail.captured_video %}
+                  <video width="400" controls style="width: 575px; height: 350px;">
+                    <source src="{{ customer_detail.captured_video }}" type="video/mp4">
+                    Your browser does not support HTML video.
+                  </video>
+                  {% else %}
+                  <p>No captured video available.</p>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+        <div class="card" style="width: 280px; height: 450px;">
+          <div class="card-body">
             <p class="text-center"><strong>More details</strong></p>
             <hr>
             <p><strong>Table number: </strong>{{ customer_detail.tableid }}</p>
             <p><strong>Customer ID: </strong>{{ customer_detail.customer_id }}</p>
-            <p><strong>Amount of customer: </strong><li class="list-inline-item">{{ customer_detail.customer_amount }} person</li></p>
-            <p><strong>Customer in time: </strong>{{ customer_detail.customer_in|time:"g:i A"  }}</p>
-            <p><strong>Customer out time: </strong>{{ customer_detail.customer_out|time:"g:i A"  }}</p>
+            <p><strong>Amount of customer: </strong>
+              <li class="list-inline-item">{{ customer_detail.customer_amount }} person</li>
+            </p>
+            <p><strong>Customer in time: </strong>{{ customer_detail.customer_in|time:"g:i A" }}</p>
+            <p><strong>Customer out time: </strong>{{ customer_detail.customer_out|time:"g:i A" }}</p>
             <p><strong>Waiting for food: </strong>{{ waiting_time_formatted }}</p>
-            <p><strong>Time spent: </strong><li class="list-inline-item">{{ time_spent_formatted }}</li></p>
+            <p><strong>Time spent: </strong>
+              <li class="list-inline-item">{{ time_spent_formatted }}</li>
+            </p>
+          </div>
         </div>
-      </div>
 
-  </div>
+      </div>
       <div class="row mt-5">
-        
+
       </div>
     </div>
-</div>
+  </div>
 </body>
+
 </html>
