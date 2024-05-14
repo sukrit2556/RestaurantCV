@@ -255,6 +255,7 @@ def check_dimsum(table_index, object_frame_in):
     print('\033[93m' + f'check_dimsum at table {table_index+1} stopped' + '\033[0m')
 
 def FakeCamera():
+    print('\033[93m' + 'FakeCamera started' + '\033[0m')
 
     global fps, simulate_status, stop_thread
     """Reads the video file at its natural rate, storing the frame in a global called 'fakeCamFrame'"""
