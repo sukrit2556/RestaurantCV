@@ -558,8 +558,7 @@ if __name__ == "__main__":
     # Define the relative path to "djangoAPP/mock_media"
     person_in_cashier_now = ""
     field_list = ["sus_type", "sus_employeeID", "sus_video", "sus_status", "sus_datetime", "sus_where"]
-    value_list = [0, ]
-    #insert_db("suspicious_events", field_list, value_list)
-    person_name = "20240511194338"
-    _, employeeID = select_db('employee', ['employee_ID'], [f"employee_image LIKE '%{person_name}%'"])
+    value_list = [0, None, "video", 1, datetime.now(), 0]
+    insert_db("suspicious_events", field_list, value_list)
+
     pass

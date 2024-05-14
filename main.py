@@ -534,12 +534,16 @@ def check_drawer_open():
             path_to_save_PC = "../djangoAPP/mock_media/drawer_sus"
             path_to_save_DB = "/mock_media/drawer_sus"
             absolute_path = relate2abs_cvt(video_filename, path_to_save_PC)
-            related_path = get_djangoapp_path(video_filename, path_to_save_DB)
+            db_path = get_djangoapp_path(video_filename, path_to_save_DB)
             #initializing video writer
             cashier_record = cv2.VideoWriter(absolute_path, cv2.VideoWriter_fourcc(*'H264'), 7, (width, height)) 
             cashier_record.write()
             status_record = not status_record
             # >>>>> insert suspicious in DB
+            field_list = ["sus_type", "sus_employeeID", "sus_video", "sus_status", "sus_datetime", "sus_where"]
+            value_list = [0, None, db_path, 1, present_datetime, 0]
+            insert_db("suspicious_events", field_list, value_list)
+            
             # >>>>> db_id = select()
 
         elif status_before_is_open == True and status_now_is_open == True:
