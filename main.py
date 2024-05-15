@@ -188,9 +188,9 @@ def combine_frame():
 
     size = (frame_width, frame_height) 
     # Define codec and create VideoWriter object
-    out = cv2.VideoWriter('result_video/processing_record.mp4', 
+    out = cv2.VideoWriter(config['save_preview_path'], 
                             cv2.VideoWriter_fourcc(*'H264'), 
-                            7, size) 
+                            30, size) 
 
     while not stop_thread and not end_recording:
         # Iterate over each video queue to check for frames
@@ -546,6 +546,8 @@ def check_drawer_open():
             insert_db("suspicious_events", field_list, value_list)
             
             # >>>>> db_id = select()
+            _, db_id = select_db('employee', ['employee_ID'], [f"employee_image LIKE '%{person_name}%'"])
+
 
         elif status_before_is_open == True and status_now_is_open == True:
             cashier_record.write()
