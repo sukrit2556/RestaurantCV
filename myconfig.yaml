@@ -15,7 +15,7 @@ frame_skip: 1
 video_frame:
   source: video
   simulate: True
-  url: "inference/videos/restaurantFull.mp4"
+  url: "inference/videos/test_person_at_cashier.mp4"
 
 live_frame:
   source: live_frame
@@ -127,3 +127,18 @@ table_coord_for_recording:
   pts6:
     - [1543, 127]
     - [1920, 666]
+
+drawer_coordination:
+  pts1:
+    - [372, 808]
+    - [869, 1080]
+
+cashier_detect_area:
+  pts1:
+    - [396, 745]
+    - [857, 1080]
+
+cashier_record_area:
+  pts1:
+    - [258, 562]
+    - [857, 1080]

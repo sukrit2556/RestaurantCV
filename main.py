@@ -29,7 +29,11 @@ fakeCamFrame = None
 simulate_status = None
 update_shared_dict_in_procress = False
 stop_check_drawer_open = False
+
 person_in_cashier_cache = None
+drawer_observing = False
+
+
 
 
 ####################### THREADING PROCESS {BEGIN} #######################
@@ -487,113 +491,125 @@ def recognize_employee_face(shared_dict, todo_queue, known_face_encodings, known
 
 def check_drawer_open():
 
+    global stop_thread
     model = YOLO(config['drawer_model_path'])
     status_record = False
     open_found = 0
     itr = 5
     status_before_is_open = False
     status_now_is_open = False
-    y_min = 808
-    y_max = 1080
-    x_min = 372
-    x_max = 869
-    width = x_max - x_min
-    height = y_max - y_min
+
+    #coordination for detecting
+    y_min, y_max = drawer_detect_points[0][0][1], drawer_detect_points[0][2][1]
+    x_min, x_max = drawer_detect_points[0][0][0], drawer_detect_points[0][2][0]
+
+    y_min_rec, y_max_rec = cashier_area_record[0][0][1], cashier_area_record[0][2][1]
+    x_min_rec, x_max_rec = cashier_area_record[0][0][0], cashier_area_record[0][2][0]
+    size = cashier_record_width_height[0]
+
     employeeID = None
-    #start loop
-    
-    while not stop_thread and not stop_check_drawer_open:
-        person_in_cashier_now = person_in_cashier_cache #id
-                
-        #detect if drawer is at least half of 5 frame 
-        for _ in range (itr):
-            cashier_area = blank_frame_cache[y_min:y_max, x_min:x_max]
 
-            #use model detection
-            cv2.imshow("cashier", cashier_area)
-            results = model(source=[cashier_area], conf=0.6, show=False, save=False, classes=[0], verbose=True)
-
-            # Convert tensor array to numpy
-            if len(results[0]) > 0:
-                open_found += 1
-
-        #Interpret the status and reset open_found
-        if open_found > itr/2:      #if found opened more than half of 5 frame = Opened
-            status_before_is_open = status_now_is_open
-            status_now_is_open = True
-        else:
-            status_before_is_open = status_now_is_open
-            status_now_is_open = False
-        open_found = 0
+    try:
+        #start loop
         
+        while not stop_thread and not stop_check_drawer_open:
+            person_in_cashier_now = person_in_cashier_cache #id
+                    
+            #detect if drawer is at least half of 5 frame 
+            for _ in range (itr):
+                cashier_area = blank_frame_cache[y_min:y_max, x_min:x_max]
+                cashier_area_rec = blank_frame_cache[y_min_rec:y_max_rec, x_min_rec:x_max_rec]
 
-        #Case 1: if drawer were detected open
-        if status_before_is_open == False and status_now_is_open == True:
+                #use model detection
+                cv2.imshow("cashier", cashier_area)
+                cv2.waitKey(1)
+                results = model(source=[cashier_area], conf=0.6, show=False, save=False, classes=[0], verbose=True)
 
-            #fetch data from person at cashier
-            person_data = shared_dict[person_in_cashier_now]
+                # Convert tensor array to numpy
+                if len(results[0]) > 0:
+                    open_found += 1
+
+            #Interpret the status and reset open_found
+            if open_found > itr/2:      #if found opened more than half of 5 frame = Opened
+                status_before_is_open = status_now_is_open
+                status_now_is_open = True
+            else:
+                status_before_is_open = status_now_is_open
+                status_now_is_open = False
+            open_found = 0
             
-            #set name path with datetimenow
-            video_filename = present_datetime.strftime("%Y%m%d%H%M%S" + ".mp4")
-            path_to_save_PC = "../djangoAPP/mock_media/drawer_sus"
-            path_to_save_DB = "/mock_media/drawer_sus"
-            absolute_path = relate2abs_cvt(video_filename, path_to_save_PC)
-            db_path = get_djangoapp_path(video_filename, path_to_save_DB)
-            
-            #initializing video writer
-            cashier_record = cv2.VideoWriter(absolute_path, cv2.VideoWriter_fourcc(*'H264'), 7, (width, height)) 
-            
-            #insert suspicious in DB
-            field_list = ["sus_type", "sus_employeeID", "sus_video", "sus_status", "sus_datetime", "sus_where"]
 
-            #if know employee name at first glance 
-            if (person_data.person_type != "unknown" and person_data.person_type != "customer" and employeeID == None):
-                _, employeeID = select_db("employee", ["employee_ID"], [f"employee_name = {person_data.person_type}"], verbose = True)
-                value_list = [0, employeeID, db_path, 1, present_datetime, 0]
+            #Case 1: if drawer were detected open
+            if status_before_is_open == False and status_now_is_open == True:
 
-                #prevent dict error before insert suspicious event
-                if person_in_cashier_now in shared_dict:
-                    insert_db("suspicious_events", field_list, value_list)
-                    cashier_record.write()
-                    status_record = not status_record
-                    _, sus_id = select_db('suspicious_events', ['max(sus_ID)'], [f"sus_employeeID = {employeeID}"])
-
-            #if don't know employee name at first glance
-            elif (person_data.person_type == "unknown" and employeeID == None):
-                value_list = [0, None, db_path, 1, present_datetime, 0]
-
-                #prevent dict error before insert suspicious event
-                if person_in_cashier_now in shared_dict:
-                    insert_db("suspicious_events", field_list, value_list)
-                    cashier_record.write()
-                    status_record = not status_record
-                    _, sus_id = select_db('suspicious_events', ['max(sus_ID)'], [f"sus_employeeID = {employeeID}"])
-
-        #Case 2: if the drawer is already opened
-        elif status_before_is_open == True and status_now_is_open == True:
-            cashier_record.write()
-
-            #prevent dict error
-            if person_in_cashier_now in shared_dict:
-
-                #if program has figured out what employee was or person still unknow, then just let go
-                if shared_dict[person_in_cashier_now].person_type == "unknown" or employeeID != None: #if figured out what employee was, then just let go
-                    pass
+                #fetch data from person at cashier
+                person_data = shared_dict[person_in_cashier_now]
                 
-                #if program just already know name of person and never knew the name of person before, then
-                #update the name to suspicious record
-                elif shared_dict[person_in_cashier_now].person_type != "unknown" and employeeID == None:
-                    person_name = shared_dict[person_in_cashier_now].person_type
-                    _, employeeID = select_db("employee", ["employee_ID"], [f"employee_name = {person_name}"], verbose = True)
-                    #>>>>>>>update database for employee name
-                    update_db("suspicious_events", "sus_employeeID", employeeID, [f"sus_ID = {sus_id[0][0]}"], verbose = True)
+                #set name path with datetimenow
+                video_filename = present_datetime.strftime("%Y%m%d%H%M%S" + ".mp4")
+                path_to_save_PC = "../djangoAPP/mock_media/drawer_sus"
+                path_to_save_DB = "/mock_media/drawer_sus"
+                absolute_path = relate2abs_cvt(video_filename, path_to_save_PC)
+                db_path = get_djangoapp_path(video_filename, path_to_save_DB)
+                
+                #initializing video writer
+                cashier_record = cv2.VideoWriter(absolute_path, cv2.VideoWriter_fourcc(*'H264'), 7, size) 
+                
+                #insert suspicious in DB
+                field_list = ["sus_type", "sus_employeeID", "sus_video", "sus_status", "sus_datetime", "sus_where"]
 
-        #if the drawer is detected closed
-        elif status_before_is_open == True and status_now_is_open == False:
-            status_record = not status_record
-            employeeID = None
-            cashier_record.release()
+                #if know employee name at first glance 
+                if (person_data.person_type != "unknown" and person_data.person_type != "customer" and employeeID == None):
+                    _, employeeID = select_db("employee", ["employee_ID"], [f"employee_name = {person_data.person_type}"], verbose = True)
+                    value_list = [0, employeeID, db_path, 1, present_datetime, 0]
 
+                    #prevent dict error before insert suspicious event
+                    if person_in_cashier_now in shared_dict:
+                        insert_db("suspicious_events", field_list, value_list)
+                        cashier_record.write(cashier_area_rec)
+                        status_record = not status_record
+                        _, sus_id = select_db('suspicious_events', ['max(sus_ID)'], [f"sus_employeeID = {employeeID}"])
+
+                #if don't know employee name at first glance
+                elif (person_data.person_type == "unknown" and employeeID == None):
+                    value_list = [0, None, db_path, 1, present_datetime, 0]
+
+                    #prevent dict error before insert suspicious event
+                    if person_in_cashier_now in shared_dict:
+                        insert_db("suspicious_events", field_list, value_list)
+                        cashier_record.write(cashier_area_rec)
+                        status_record = not status_record
+                        _, sus_id = select_db('suspicious_events', ['max(sus_ID)'], [f"sus_employeeID = {employeeID}"])
+
+            #Case 2: if the drawer is already opened
+            elif status_before_is_open == True and status_now_is_open == True:
+                cashier_record.write(cashier_area_rec)
+
+                #prevent dict error
+                if person_in_cashier_now in shared_dict:
+
+                    #if program has figured out what employee was or person still unknow, then just let go
+                    if shared_dict[person_in_cashier_now].person_type == "unknown" or employeeID != None: #if figured out what employee was, then just let go
+                        pass
+                    
+                    #if program just already know name of person and never knew the name of person before, then
+                    #update the name to suspicious record
+                    elif shared_dict[person_in_cashier_now].person_type != "unknown" and employeeID == None:
+                        person_name = shared_dict[person_in_cashier_now].person_type
+                        _, employeeID = select_db("employee", ["employee_ID"], [f"employee_name = {person_name}"], verbose = True)
+                        #>>>>>>>update database for employee name
+                        update_db("suspicious_events", "sus_employeeID", employeeID, [f"sus_ID = {sus_id[0][0]}"], verbose = True)
+
+            #if the drawer is detected closed
+            elif status_before_is_open == True and status_now_is_open == False:
+                status_record = not status_record
+                employeeID = None
+                cashier_record.release()
+    except Exception as e:
+            print("error: ", e)
+            traceback.print_exc()
+            stop_thread = True
+            stop_subprocess.set()
         
         
 
@@ -615,8 +631,9 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
     ## delete incomplete data with no customer out time before the process
 
     global stop_thread, frame_count, fps, frame_rate, present_datetime, list_realtime_count_cache, object2, fakeCamFrame, simulate_status, end_recording
-    global blank_frame_cache, total_frame_count
-
+    global blank_frame_cache, total_frame_count, stop_check_drawer_open, person_in_cashier_cache, drawer_observing
+    found_in_cashier_count = 0
+    drawer_thread  = None
     #delete incomplete data before start program
     i = "0000-00-00 00:00:00"
     condition_list = [f"customer_OUT = '{i}'"]
@@ -660,6 +677,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
     print('\033[92m' + f'Initializing Done!!!' + '\033[0m')
     print('\033[93m' + f'[Main Loop] Started!' + '\033[0m')
     while not stop_thread:
+        person_in_cashier = None
         
         # Capture frame-by-frame
         if not simulate and source_platform == "video_frame":    #video frame and not simulate fake camera
@@ -720,6 +738,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
                 while shared_dict_update_inprogress.is_set():
                     time.sleep(0.1)
                 local_dict = dict(shared_dict)
+                
                 for i in range(len(detect_params[0])):
 
                     boxes = detect_params[0].boxes
@@ -747,6 +766,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
                         local_dict[id] = data
 
                     is_customer = count_table_people(horizon_center, vertical_center)
+                    
                     #print('\033[91m' + 'to classify unknown_customer' + '\033[0m')
                     #if person is customer
                     classify_unknown_customer(local_dict, known_employee, id, is_customer, frame_count, present_datetime, 
@@ -754,7 +774,13 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
                     
                     key_contain_in_frame.append(id)
 
-                    # Display class name and confidence (only used in track mode)
+                    #check if at cashier
+                    is_at_cashier = check_person_at_cashier(horizon_center, vertical_center)
+                    if is_at_cashier:                  
+                        person_in_cashier = id
+                        found_in_cashier_count+= 1
+                        
+                    # Display plotting class name and confidence (only used in track mode)
                     try:
                         id = int(boxes[i].id.cpu().numpy()[0])
                         
@@ -798,11 +824,30 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
                 update_local_dict(local_dict, key_contain_in_frame, frame_count)
                 shared_dict_update_queue.put(local_dict)
             
+            person_in_cashier_cache = person_in_cashier
+
+            #drawer status 0 = nothing to do, 1 to do/doing 
+            if frame_count % 5 == 0:
+                if found_in_cashier_count > 5/2:
+                    if drawer_observing == False:
+                        stop_check_drawer_open = False
+                        drawer_thread = threading.Thread(target=check_drawer_open)
+                        drawer_thread.start()
+                        drawer_observing = True
+                else:
+                    if drawer_observing == True:
+                        stop_check_drawer_open = True
+                        drawer_thread.join()
+                        drawer_observing = False
+            
 
             ### draw table area ###
             draw_table_point(frame_data, availability_cache)
             #draw_from_points(frame_data, table_crop_points, (255, 0, 0))
             #draw_from_points(frame_data, plotted_points_recording, (0, 255, 255))
+            draw_from_points(frame_data, drawer_detect_points, (0, 255, 255))
+            draw_from_points(frame_data, cashier_area_points, (0, 0, 255))
+            draw_from_points(frame_data, cashier_area_record, (0, 255, 0))
 
             
             # put text on the bottom right bottom

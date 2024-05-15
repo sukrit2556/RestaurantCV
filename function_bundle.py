@@ -141,6 +141,7 @@ for key, value in config["table_coordinate"].items():
 # Convert lists to numpy arrays
 table_points = np.array(table_points, dtype=np.int32)
 
+
 # Access the points from the config dictionary
 for key, value in config["table_crop_coord"].items():
     table_crop_points.append(value)
@@ -170,6 +171,7 @@ for i in range (len(table_points)):
     object2.append(obj2)
     check_dimsum_thread_list.append(0)
 
+#for recording customer
 plotted_points = []
 record_width_height = []
 for key, value in  config['table_coord_for_recording'].items():
@@ -183,9 +185,47 @@ for key, value in  config['table_coord_for_recording'].items():
     record_width_height.append((width, height))
     plotted_points.append(full_shape)
 
-plotted_points_recording = np.array(plotted_points, dtype=np.int32)
 
+#for detecting drawer
+drawer_detect_points = []
+for key, value in  config['drawer_coordination'].items():
+    top_left = [value[0][0], value[0][1]]
+    top_right = [value[1][0], value[0][1]]
+    bottom_right = [value[1][0], value[1][1]]
+    bottom_left = [value[0][0], value[1][1]]
+    full_shape = [top_left, top_right, bottom_right, bottom_left]
+    drawer_detect_points.append(full_shape)
+
+#for detecting person in cashier
+cashier_area_points = []
+for key, value in  config['cashier_detect_area'].items():
+    top_left = [value[0][0], value[0][1]]
+    top_right = [value[1][0], value[0][1]]
+    bottom_right = [value[1][0], value[1][1]]
+    bottom_left = [value[0][0], value[1][1]]
+    full_shape = [top_left, top_right, bottom_right, bottom_left]
+    cashier_area_points.append(full_shape)
+
+#for recording cashier area
+cashier_area_record = []
+cashier_record_width_height = []
+for key, value in  config['cashier_record_area'].items():
+    top_left = [value[0][0], value[0][1]]
+    top_right = [value[1][0], value[0][1]]
+    bottom_right = [value[1][0], value[1][1]]
+    bottom_left = [value[0][0], value[1][1]]
+    full_shape = [top_left, top_right, bottom_right, bottom_left]
+    width = value[1][0] - value[0][0]
+    height = value[1][1] - value[0][1]
+    cashier_record_width_height.append((width, height))
+    cashier_area_record.append(full_shape)
+
+plotted_points_recording = np.array(plotted_points, dtype=np.int32)
+drawer_detect_points = np.array(drawer_detect_points, dtype=np.int32)
+cashier_area_points = np.array(cashier_area_points, dtype=np.int32)
+cashier_area_record = np.array(cashier_area_record, dtype=np.int32)
 save_preview = config['save_preview']
+
 
 
 
@@ -295,6 +335,14 @@ def count_table_people(horizon_center, vertical_center):
             return True
     return False
 
+def check_person_at_cashier(horizon_center, vertical_center):
+    pts = drawer_detect_points[0]
+    pts = pts.tolist()
+    pts.append(pts[0])
+    edges = list(zip(pts, pts[1:] + pts[:1]))
+    if is_inside(edges, horizon_center, vertical_center):
+        return True
+    return False
 
 def reset_people_count():
     list_realtime_count.clear()
@@ -334,9 +382,29 @@ def add_jpg_media(table_id, filename, media_to_add):
 
     #save to Database
     relative_image_file_path = os.path.normpath(os.path.join(config['save_customer_path_child'], str(result[0][0]), filename))
-    update_db("customer_events", "getfood_frame", relative_image_file_path, 
+    retries = 0
+    max_retries = 3
+    ## prevent database deadlock problem
+    while retries < max_retries:
+        try:
+            update_db("customer_events", "getfood_frame", relative_image_file_path, 
                       ["customer_ID = (" + f"{select_db('customer_events', ['MAX(customer_ID)'], [f'tableID = {table_id+1}'])[0]})", 
-                       f"tableID = {table_id+1}"])
+                       f"tableID = {table_id+1}"], verbose=True)
+            break  # If successful, exit the loop
+        except mysql.connector.errors.InternalError as e:
+            # Check if the error is a deadlock
+            if "Deadlock found" in str(e):
+                retries += 1
+                if retries < max_retries:
+                    print("Deadlock encountered. Retrying...")
+                    time.sleep(1)  # Add delay before retrying
+                else:
+                    print("Max retries reached. Giving up.")
+                    raise  # Re-raise the exception if max retries reached
+            else:
+                # If it's not a deadlock, raise the exception immediately
+                raise
+    
 def get_media_abs_path(customerID, filename):
     path_to_save = ".." + config['save_customer_path_parent'] + config['save_customer_path_child']
     media_directory = os.path.join(os.getcwd(), path_to_save)
