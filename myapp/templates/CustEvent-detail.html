@@ -161,18 +161,17 @@
 
           <div id="accordion">
             <div class="card">
-              <div class="card-header" style="height: 50px; text-align: center; padding: 0;" id="headingTwo">
+              <div class="card-header" style="height: 50px; text-align: center; padding: 0;" id="headingOne">
                 <button class="btn btn-link collapsed"
                   style="color: rgb(151, 151, 151); text-decoration: none; padding: 0; height:100%; width: 100%;"
-                  data-toggle="collapse" data-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                  data-toggle="collapse" data-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
                   <div class="d-flex justify-content-between">
-                    <span style="padding: 0 20px;">Got food frame</span>
+                    <span style="padding: 0 20px;">Get food frame</span>
                     <span style="padding: 0 20px;">▼</span>
                   </div>
                 </button>
               </div>
-
-              <div id="collapseOne" class="collapse show" aria-labelledby="headingOne" data-parent="#accordion">
+              <div id="collapseOne" class="collapse" aria-labelledby="headingOne" data-parent="#accordion">
                 <div class="card-body text-center">
                   {% if customer_detail.getfood_frame %}
                   <img src="{{ customer_detail.getfood_frame }}" class="align-items-center d-block img-fluid"
@@ -183,7 +182,6 @@
                 </div>
               </div>
             </div>
-
             <div class="card">
               <div class="card-header" style="height: 50px; text-align: center; padding: 0;" id="headingTwo">
                 <button class="btn btn-link collapsed"
@@ -195,10 +193,6 @@
                   </div>
                 </button>
               </div>
-
-
-
-
               <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordion">
                 <div class="card-body text-center">
                   {% if customer_detail.captured_video %}
