@@ -463,10 +463,13 @@ if __name__ == "__main__":
     field_list = ["sus_type", "sus_employeeID", "sus_video", "sus_status", "sus_datetime", "sus_where"]
     value_list = [0, None, "video", 1, datetime.now(), 0]
     insert_db("suspicious_events", field_list, value_list)"""
-    filename = "20240515170241_20240121_054949.jpg"
-    _, employee_data = select_db("employee", ["employee_ID","employee_name"], [f"employee_image LIKE '%{filename}%'"])
-    print("result = ", employee_data)
-    print(f'ID = {employee_data[0][0]}')
-    print(f'name = {employee_data[0][1]}')
+    employee_id = 12
+    db_path = "test.mp4"
+    field_list = ["sus_type", "sus_employeeID", "sus_video", "sus_status", "sus_datetime", "sus_where"]
+    value_list = [0, employee_id, db_path, 1, present_datetime, 0]
+    insert_db("suspicious_events", field_list, value_list)
+    _, sus_id = select_db('suspicious_events', ['max(sus_ID)'], [f"sus_employeeID = {12}"])
+    print(f"sus_id = {sus_id[0][0]}")
 
+    update_db("suspicious_events", "sus_employeeID", 100, [f"sus_ID = {sus_id[0][0]}"], verbose = True)
     pass

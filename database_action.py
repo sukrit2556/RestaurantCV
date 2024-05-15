@@ -32,7 +32,7 @@ def insert_db(table_name, field_list, value_list, verbose = False):
     mycursor.close()
     mydb.close()
 
-def update_db(table_name, field_to_edit, new_value, condition_list, verbose = False):
+def update_db(table_name, field_to_edit, new_value, condition_list:list, verbose = False):
     mydb = connect_db()
     mycursor = mydb.cursor()
 

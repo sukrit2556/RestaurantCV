@@ -188,7 +188,7 @@ def combine_frame():
 
     size = (frame_width, frame_height) 
     # Define codec and create VideoWriter object
-    out = cv2.VideoWriter(config['save_preview_path'], 
+    out = cv2.VideoWriter('result_video/processing_record.mp4', 
                             cv2.VideoWriter_fourcc(*'H264'), 
                             30, size) 
 
@@ -505,7 +505,7 @@ def check_drawer_open():
     while not stop_thread and not stop_check_drawer_open:
         person_in_cashier_now = person_in_cashier_cache #id
                 
-        #detect if drawer is opened more than 5 frame
+        #detect if drawer is at least half of 5 frame 
         for _ in range (itr):
             cashier_area = blank_frame_cache[y_min:y_max, x_min:x_max]
 
@@ -517,8 +517,8 @@ def check_drawer_open():
             if len(results[0]) > 0:
                 open_found += 1
 
-        #translate the status and reset open_found
-        if open_found > itr/2:
+        #Interpret the status and reset open_found
+        if open_found > itr/2:      #if found opened more than half of 5 frame = Opened
             status_before_is_open = status_now_is_open
             status_now_is_open = True
         else:
@@ -527,8 +527,11 @@ def check_drawer_open():
         open_found = 0
         
 
-        #if drawer were detected open
+        #Case 1: if drawer were detected open
         if status_before_is_open == False and status_now_is_open == True:
+
+            #fetch data from person at cashier
+            person_data = shared_dict[person_in_cashier_now]
             
             #set name path with datetimenow
             video_filename = present_datetime.strftime("%Y%m%d%H%M%S" + ".mp4")
@@ -536,31 +539,56 @@ def check_drawer_open():
             path_to_save_DB = "/mock_media/drawer_sus"
             absolute_path = relate2abs_cvt(video_filename, path_to_save_PC)
             db_path = get_djangoapp_path(video_filename, path_to_save_DB)
+            
             #initializing video writer
             cashier_record = cv2.VideoWriter(absolute_path, cv2.VideoWriter_fourcc(*'H264'), 7, (width, height)) 
-            cashier_record.write()
-            status_record = not status_record
-            # >>>>> insert suspicious in DB
-            field_list = ["sus_type", "sus_employeeID", "sus_video", "sus_status", "sus_datetime", "sus_where"]
-            value_list = [0, None, db_path, 1, present_datetime, 0]
-            insert_db("suspicious_events", field_list, value_list)
             
-            # >>>>> db_id = select()
-            _, db_id = select_db('employee', ['employee_ID'], [f"employee_image LIKE '%{person_name}%'"])
+            #insert suspicious in DB
+            field_list = ["sus_type", "sus_employeeID", "sus_video", "sus_status", "sus_datetime", "sus_where"]
 
+            #if know employee name at first glance 
+            if (person_data.person_type != "unknown" and person_data.person_type != "customer" and employeeID == None):
+                _, employeeID = select_db("employee", ["employee_ID"], [f"employee_name = {person_data.person_type}"], verbose = True)
+                value_list = [0, employeeID, db_path, 1, present_datetime, 0]
 
+                #prevent dict error before insert suspicious event
+                if person_in_cashier_now in shared_dict:
+                    insert_db("suspicious_events", field_list, value_list)
+                    cashier_record.write()
+                    status_record = not status_record
+                    _, sus_id = select_db('suspicious_events', ['max(sus_ID)'], [f"sus_employeeID = {employeeID}"])
+
+            #if don't know employee name at first glance
+            elif (person_data.person_type == "unknown" and employeeID == None):
+                value_list = [0, None, db_path, 1, present_datetime, 0]
+
+                #prevent dict error before insert suspicious event
+                if person_in_cashier_now in shared_dict:
+                    insert_db("suspicious_events", field_list, value_list)
+                    cashier_record.write()
+                    status_record = not status_record
+                    _, sus_id = select_db('suspicious_events', ['max(sus_ID)'], [f"sus_employeeID = {employeeID}"])
+
+        #Case 2: if the drawer is already opened
         elif status_before_is_open == True and status_now_is_open == True:
             cashier_record.write()
-            if person_in_cashier_now in shared_dict:
-                #if figured out what employee was, then just let go
-                if shared_dict[person_in_cashier_now].person_type == "unknown" and employeeID != None: #if figured out what employee was, then just let go
-                    pass
 
+            #prevent dict error
+            if person_in_cashier_now in shared_dict:
+
+                #if program has figured out what employee was or person still unknow, then just let go
+                if shared_dict[person_in_cashier_now].person_type == "unknown" or employeeID != None: #if figured out what employee was, then just let go
+                    pass
+                
+                #if program just already know name of person and never knew the name of person before, then
+                #update the name to suspicious record
                 elif shared_dict[person_in_cashier_now].person_type != "unknown" and employeeID == None:
                     person_name = shared_dict[person_in_cashier_now].person_type
-                    _, employeeID = select_db('employee', ['employee_ID'], [f"employee_image LIKE '%{person_name}%'"])
+                    _, employeeID = select_db("employee", ["employee_ID"], [f"employee_name = {person_name}"], verbose = True)
                     #>>>>>>>update database for employee name
+                    update_db("suspicious_events", "sus_employeeID", employeeID, [f"sus_ID = {sus_id[0][0]}"], verbose = True)
 
+        #if the drawer is detected closed
         elif status_before_is_open == True and status_now_is_open == False:
             status_record = not status_record
             employeeID = None
