@@ -13,6 +13,8 @@ import os
 from django.conf import settings
 from django.utils.text import slugify
 from datetime import datetime
+from django.core.exceptions import ObjectDoesNotExist
+
 
 
 
@@ -212,13 +214,16 @@ def AddEm(request):
 
 def handle_uploaded_file(file, filename):
     # Define the directory where you want to save the uploaded files
-    upload_dir = os.path.join(settings.MEDIA_ROOT, '')
+    upload_dir = os.path.join(settings.MEDIA_ROOT, 'employee_face')
+    print(f"upload_dir = {upload_dir}")
 
     # Create the directory if it doesn't exist
     os.makedirs(upload_dir, exist_ok=True)
 
     # Join the directory path and the filename to get the full file path
     file_path = os.path.join(upload_dir, filename)
+    print("uploaded fiel  = ", file_path)
+
 
     # Open the file and write the uploaded content to the destination file
     with open(file_path, 'wb+') as destination:
@@ -234,6 +239,46 @@ def generate_unique_filename(original_filename):
     new_filename = f"{timestamp}_{slugify(base)}{extension}"
     return new_filename
 
+def delete_old_photo(employee_id):
+    try:
+        # Retrieve the employee record
+        employee_detail = Employee.objects.get(employee_id=employee_id)
+        
+        image_path = employee_detail.employee_image
+
+        # Normalize the path to handle different slashes and ensure case insensitivity
+        image_path_normalized = os.path.normpath(image_path).replace('\\', '/').lower()
+        
+        # Remove the leading 'mock_media/' if it exists
+        prefix = '/mock_media/'
+        if image_path_normalized.startswith(prefix):
+            image_path_normalized = image_path_normalized[len(prefix):]
+
+        print("online 257", image_path_normalized)
+        
+        # Reconstruct the full path to the image
+        image_full_path = os.path.join(settings.MEDIA_ROOT, image_path_normalized.replace('/', os.sep).lstrip(os.sep))
+
+        print("The full path =", image_full_path)
+        
+        # Delete the image file from the file system if it exists
+        if os.path.exists(image_full_path):
+            os.remove(image_full_path)
+            print(f'{image_full_path} has been deleted successfully.')
+        else:
+            print(f'{image_full_path} does not exist.')
+        
+        # Update the employee record to remove the image path
+        employee_detail.employee_image = ''
+        employee_detail.save()
+        print(f'Image path removed from database for employee_id: {employee_id}')
+        
+    except ObjectDoesNotExist:
+        print(f'Employee with employee_id {employee_id} does not exist.')
+    except Exception as e:
+        print(f'Error: {e}')
+
+
 def EditEm(request, id):
     employee_detail = Employee.objects.get(employee_id=id)
 
@@ -246,10 +291,13 @@ def EditEm(request, id):
         if 'photo' in request.FILES:
             photo_file = request.FILES['photo']
 
+            delete_old_photo(id)
+
             new_filename = generate_unique_filename(photo_file.name)
             handle_uploaded_file(photo_file, new_filename)
             # Update employee_detail with the new filename
             employee_detail.employee_image = os.path.join('\mock_media\employee_face', new_filename)
+
         
         # Save the updated employee object
         employee_detail.save()
@@ -261,6 +309,7 @@ def EditEm(request, id):
     
 def delete_employee(request, employee_id):
     employee = get_object_or_404(Employee, pk=employee_id)
+    delete_old_photo(employee_id)
     employee.delete()
     return redirect('ListTable')
 
