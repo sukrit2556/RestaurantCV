@@ -15,7 +15,7 @@ frame_skip: 1
 video_frame:
   source: video
   simulate: True
-  url: "inference/videos/test_person_at_cashier.mp4"
+  url: "inference/videos/restaurant_test_human_inout_cashier_2round_with_drawer.mp4"
 
 live_frame:
   source: live_frame

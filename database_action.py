@@ -21,7 +21,7 @@ def insert_db(table_name, field_list, value_list, verbose = False):
     sql = f"INSERT INTO {table_name} ({', '.join(field_list)}) VALUES ({field_placeholders})"
     if verbose == True:
         print("Generated SQL query:", sql)
-
+    print("value list = ", value_list)
     # Execute the query
     mycursor.execute(sql, value_list)
 

@@ -527,17 +527,9 @@ def update_local_dict(local_dict, key_contain_in_frame, now_frame):
 if __name__ == "__main__":
     #update_db("test", "name", "sukei", ["address = 'Highway21'", "text2 = 'suk'"])
     # Define the relative path to "djangoAPP/mock_media"
-    """person_in_cashier_now = ""
+    employeeID = 12
+    db_path = "testnow.mp4"
+    person_in_cashier_now = ""
     field_list = ["sus_type", "sus_employeeID", "sus_video", "sus_status", "sus_datetime", "sus_where"]
-    value_list = [0, None, "video", 1, datetime.now(), 0]
-    insert_db("suspicious_events", field_list, value_list)"""
-    employee_id = 12
-    db_path = "test.mp4"
-    field_list = ["sus_type", "sus_employeeID", "sus_video", "sus_status", "sus_datetime", "sus_where"]
-    value_list = [0, employee_id, db_path, 1, present_datetime, 0]
+    value_list = [0, employeeID, db_path, 1, present_datetime, 0]
     insert_db("suspicious_events", field_list, value_list)
-    _, sus_id = select_db('suspicious_events', ['max(sus_ID)'], [f"sus_employeeID = {12}"])
-    print(f"sus_id = {sus_id[0][0]}")
-
-    update_db("suspicious_events", "sus_employeeID", 100, [f"sus_ID = {sus_id[0][0]}"], verbose = True)
-    pass

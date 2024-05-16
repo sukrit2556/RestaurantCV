@@ -490,14 +490,15 @@ def recognize_employee_face(shared_dict, todo_queue, known_face_encodings, known
     print('\033[93m' + f'[Subprocess] face recognition stopped' + '\033[0m')
 
 def check_drawer_open():
-
+    print('\033[93m' + f'check_drawer_open [started]' + '\033[0m')
     global stop_thread
     model = YOLO(config['drawer_model_path'])
     status_record = False
     open_found = 0
-    itr = 5
+    itr = 15
     status_before_is_open = False
     status_now_is_open = False
+    cashier_record = None
 
     #coordination for detecting
     y_min, y_max = drawer_detect_points[0][0][1], drawer_detect_points[0][2][1]
@@ -513,7 +514,7 @@ def check_drawer_open():
         #start loop
         
         while not stop_thread and not stop_check_drawer_open:
-            person_in_cashier_now = person_in_cashier_cache #id
+            
                     
             #detect if drawer is at least half of 5 frame 
             for _ in range (itr):
@@ -521,13 +522,14 @@ def check_drawer_open():
                 cashier_area_rec = blank_frame_cache[y_min_rec:y_max_rec, x_min_rec:x_max_rec]
 
                 #use model detection
-                cv2.imshow("cashier", cashier_area)
-                cv2.waitKey(1)
-                results = model(source=[cashier_area], conf=0.6, show=False, save=False, classes=[0], verbose=True)
-
+                
+                results = model(source=[cashier_area], conf=0.6, show=False, save=False, classes=[0], verbose=False)
+                annotated_frame = results[0].plot()
                 # Convert tensor array to numpy
                 if len(results[0]) > 0:
                     open_found += 1
+                cv2.imshow("cashier", annotated_frame)
+                cv2.waitKey(1)
 
             #Interpret the status and reset open_found
             if open_found > itr/2:      #if found opened more than half of 5 frame = Opened
@@ -538,11 +540,18 @@ def check_drawer_open():
                 status_now_is_open = False
             open_found = 0
             
-
+            person_in_cashier_now = person_in_cashier_cache #id
+            print("person_in_cashier_now = ", person_in_cashier_now)
+            print(f"status_before_is_open = {status_before_is_open}, status_now_is_open = {status_now_is_open}")
             #Case 1: if drawer were detected open
             if status_before_is_open == False and status_now_is_open == True:
 
                 #fetch data from person at cashier
+                while shared_dict_update_inprogress.is_set():
+                    time.sleep(0.1)
+                if person_in_cashier_now not in shared_dict:
+                    continue
+
                 person_data = shared_dict[person_in_cashier_now]
                 
                 #set name path with datetimenow
@@ -560,15 +569,16 @@ def check_drawer_open():
 
                 #if know employee name at first glance 
                 if (person_data.person_type != "unknown" and person_data.person_type != "customer" and employeeID == None):
-                    _, employeeID = select_db("employee", ["employee_ID"], [f"employee_name = {person_data.person_type}"], verbose = True)
-                    value_list = [0, employeeID, db_path, 1, present_datetime, 0]
+                    _, employeeID = select_db("employee", ["employee_ID"], [f"employee_name = '{person_data.person_type}'"], verbose = True)
+                    value_list = [0, employeeID[0][0], db_path, 1, present_datetime, 0]
 
                     #prevent dict error before insert suspicious event
                     if person_in_cashier_now in shared_dict:
-                        insert_db("suspicious_events", field_list, value_list)
+                        insert_db("suspicious_events", field_list, value_list, verbose=True)
                         cashier_record.write(cashier_area_rec)
                         status_record = not status_record
-                        _, sus_id = select_db('suspicious_events', ['max(sus_ID)'], [f"sus_employeeID = {employeeID}"])
+                        _, sus_id = select_db('suspicious_events', ['max(sus_ID)'], [f"sus_where = 0"])
+                        print('\033[91m' + f'**check_drawer_open started recording with knowing who open' + '\033[0m')
 
                 #if don't know employee name at first glance
                 elif (person_data.person_type == "unknown" and employeeID == None):
@@ -579,37 +589,48 @@ def check_drawer_open():
                         insert_db("suspicious_events", field_list, value_list)
                         cashier_record.write(cashier_area_rec)
                         status_record = not status_record
-                        _, sus_id = select_db('suspicious_events', ['max(sus_ID)'], [f"sus_employeeID = {employeeID}"])
+                        _, sus_id = select_db('suspicious_events', ['max(sus_ID)'], [f"sus_where = 0"])
+                        print('\033[91m' + f'**check_drawer_open started recording WITHOUT knowing who open' + '\033[0m')
 
             #Case 2: if the drawer is already opened
             elif status_before_is_open == True and status_now_is_open == True:
                 cashier_record.write(cashier_area_rec)
 
                 #prevent dict error
-                if person_in_cashier_now in shared_dict:
+                while shared_dict_update_inprogress.is_set():
+                    time.sleep(0.1)
+                if person_in_cashier_now not in shared_dict:
+                    continue
+                person_data = shared_dict[person_in_cashier_now]
 
-                    #if program has figured out what employee was or person still unknow, then just let go
-                    if shared_dict[person_in_cashier_now].person_type == "unknown" or employeeID != None: #if figured out what employee was, then just let go
-                        pass
-                    
-                    #if program just already know name of person and never knew the name of person before, then
-                    #update the name to suspicious record
-                    elif shared_dict[person_in_cashier_now].person_type != "unknown" and employeeID == None:
-                        person_name = shared_dict[person_in_cashier_now].person_type
-                        _, employeeID = select_db("employee", ["employee_ID"], [f"employee_name = {person_name}"], verbose = True)
-                        #>>>>>>>update database for employee name
-                        update_db("suspicious_events", "sus_employeeID", employeeID, [f"sus_ID = {sus_id[0][0]}"], verbose = True)
+                #if program has figured out what employee was or person still unknow, then just let go
+                if person_data.person_type == "unknown" or employeeID != None: #if figured out what employee was, then just let go
+                    pass
+                
+                #if program just already know name of person and never knew the name of person before, then
+                #update the name to suspicious record
+                elif person_data.person_type != "unknown" and employeeID == None:
+                    person_name = person_data.person_type
+                    _, employeeID = select_db("employee", ["employee_ID"], [f"employee_name = '{person_name}'"], verbose = True)
+                    #>>>>>>>update database for employee name
+                    update_db("suspicious_events", "sus_employeeID", employeeID[0][0], [f"sus_ID = {sus_id[0][0]}"], verbose = True)
+                    print('\033[93m' + f'**check_drawer_open know who open the drawer: {person_name}' + '\033[0m')
 
             #if the drawer is detected closed
             elif status_before_is_open == True and status_now_is_open == False:
+                
                 status_record = not status_record
                 employeeID = None
                 cashier_record.release()
+                print('\033[91m' + f'**!!check_drawer_open stopped recording' + '\033[0m')
     except Exception as e:
             print("error: ", e)
             traceback.print_exc()
             stop_thread = True
             stop_subprocess.set()
+    if cashier_record.isOpened():
+        cashier_record.release()
+    print('\033[93m' + f'check_drawer_open stopped' + '\033[0m')
         
         
 
@@ -634,6 +655,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
     global blank_frame_cache, total_frame_count, stop_check_drawer_open, person_in_cashier_cache, drawer_observing
     found_in_cashier_count = 0
     drawer_thread  = None
+    person_in_cashier = None
     #delete incomplete data before start program
     i = "0000-00-00 00:00:00"
     condition_list = [f"customer_OUT = '{i}'"]
@@ -677,7 +699,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
     print('\033[92m' + f'Initializing Done!!!' + '\033[0m')
     print('\033[93m' + f'[Main Loop] Started!' + '\033[0m')
     while not stop_thread:
-        person_in_cashier = None
+        
         
         # Capture frame-by-frame
         if not simulate and source_platform == "video_frame":    #video frame and not simulate fake camera
@@ -827,8 +849,9 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
             person_in_cashier_cache = person_in_cashier
 
             #drawer status 0 = nothing to do, 1 to do/doing 
-            if frame_count % 5 == 0:
-                if found_in_cashier_count > 5/2:
+            if frame_count % 10 == 0:
+                print(f"found_in_cashier_count = {found_in_cashier_count}")
+                if found_in_cashier_count > 10/2.5:
                     if drawer_observing == False:
                         stop_check_drawer_open = False
                         drawer_thread = threading.Thread(target=check_drawer_open)
@@ -839,6 +862,8 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
                         stop_check_drawer_open = True
                         drawer_thread.join()
                         drawer_observing = False
+                        person_in_cashier = None
+                found_in_cashier_count = 0
             
 
             ### draw table area ###
