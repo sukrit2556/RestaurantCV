@@ -12,13 +12,30 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"
     integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p"
     crossorigin="anonymous"></script>
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-  <script>
-    $(document).ready(function () {
-      $('#myCollapsible').collapse('toggle');
-    });
-  </script>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    #myInput {
+      width: 50%;
+      font-size: 16px;
+      border: 1px solid #ddd;
+      padding-left: 20px;
+    }
+
+    #myTable {
+      width: 100%;
+    }
+
+    #myTable th,
+    #myTable td {}
+
+    #myTable tr {}
+
+    #myTable tr.header,
+    #myTable tr:hover {}
+  </style>
   <!--style-->
   <link rel="stylesheet" href="{% static 'css/style.css' %}">
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
@@ -154,10 +171,12 @@
         </div>
       </div>
       <div class="col-md-9 full-height">
+        <input type="text" class="mt-3 mb-2" style="border-radius: 50px; height: 38px;" id="myInput"
+          onkeyup="myFunction()" placeholder="Search with any keyword">
         <div class="card align-items-center mt-3" style="width: 100%; height: 100%;">
           <div class="card-body text-center" style="height: 100%; width:100%;">
             <div style="max-height: 100%; overflow-y: auto;">
-              <table class="table table-hover text-nowrap mx-3 text-center" style="width: 100%;">
+              <table class="table table-hover text-nowrap mx-3 text-center" style="width: 100%;" id="myTable">
                 <thead>
                   <tr>
                     <th scope="col" style="width: 30%">No.</th>
@@ -201,6 +220,31 @@
         </div>
       </div>
     </div>
+    <script>
+      function myFunction() {
+        var input, filter, table, tr, td, i, j, txtValue;
+        input = document.getElementById("myInput");
+        filter = input.value.toUpperCase();
+        table = document.getElementById("myTable");
+        tr = table.getElementsByTagName("tr");
+        for (i = 0; i < tr.length; i++) {
+          // Loop through all columns except the last one (Action/Resolve column)
+          for (j = 0; j < tr[i].getElementsByTagName("td").length - 1; j++) {
+            td = tr[i].getElementsByTagName("td")[j];
+            if (td) {
+              txtValue = td.textContent || td.innerText;
+              // If any column contains the search query, display the row; otherwise, hide it
+              if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                tr[i].style.display = "";
+                break; // Break the loop if any column matches
+              } else {
+                tr[i].style.display = "none";
+              }
+            }
+          }
+        }
+      }
+    </script>
 
 </body>
 
