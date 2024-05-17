@@ -22,6 +22,7 @@ stop_thread = False
 check_available_started = False
 list_total_count_cache = []
 list_realtime_count_cache = []
+count_person_at_table_cache = []
 availability_cache = []
 end_recording = False
 check_dimsum_started = False
@@ -29,6 +30,7 @@ fakeCamFrame = None
 simulate_status = None
 update_shared_dict_in_procress = False
 stop_check_drawer_open = False
+id_at_table_cache = []
 
 person_in_cashier_cache = None
 drawer_observing = False
@@ -575,7 +577,11 @@ def check_drawer_open():
                     #prevent dict error before insert suspicious event
                     if person_in_cashier_now in shared_dict:
                         insert_db("suspicious_events", field_list, value_list, verbose=True)
-                        cashier_record.write(cashier_area_rec)
+
+                        #put text of time in frame
+                        cv2.putText(annotated_frame,str(present_datetime.strftime('%Y-%m-%d %H:%M:%S')),(10,40),cv2.FONT_HERSHEY_PLAIN,2,(0,0,255),2,cv2.LINE_AA)
+                        cashier_record.write(annotated_frame)
+
                         status_record = not status_record
                         _, sus_id = select_db('suspicious_events', ['max(sus_ID)'], [f"sus_where = 0"])
                         print('\033[91m' + f'**check_drawer_open started recording with knowing who open' + '\033[0m')
@@ -587,14 +593,16 @@ def check_drawer_open():
                     #prevent dict error before insert suspicious event
                     if person_in_cashier_now in shared_dict:
                         insert_db("suspicious_events", field_list, value_list)
-                        cashier_record.write(cashier_area_rec)
+                        cv2.putText(annotated_frame,str(present_datetime.strftime('%Y-%m-%d %H:%M:%S')),(10,40),cv2.FONT_HERSHEY_PLAIN,2,(0,0,255),2,cv2.LINE_AA)
+                        cashier_record.write(annotated_frame)
                         status_record = not status_record
                         _, sus_id = select_db('suspicious_events', ['max(sus_ID)'], [f"sus_where = 0"])
                         print('\033[91m' + f'**check_drawer_open started recording WITHOUT knowing who open' + '\033[0m')
 
             #Case 2: if the drawer is already opened
             elif status_before_is_open == True and status_now_is_open == True:
-                cashier_record.write(cashier_area_rec)
+                cv2.putText(annotated_frame,str(present_datetime.strftime('%Y-%m-%d %H:%M:%S')),(10,40),cv2.FONT_HERSHEY_PLAIN,2,(0,0,255),2,cv2.LINE_AA)
+                cashier_record.write(annotated_frame)
 
                 #prevent dict error
                 while shared_dict_update_inprogress.is_set():
@@ -628,11 +636,153 @@ def check_drawer_open():
             traceback.print_exc()
             stop_thread = True
             stop_subprocess.set()
-    if cashier_record.isOpened():
+    if cashier_record is not None and cashier_record.isOpened():
         cashier_record.release()
     print('\033[93m' + f'check_drawer_open stopped' + '\033[0m')
-        
-        
+
+def check_employee_too_long():
+    print('\033[93m' + f'check_employee_too_long started' + '\033[0m')
+    global count_person_at_table_cache, stop_thread, availability_cache, check_available_started, fps, frame_rate
+
+    itr = 0
+    frame_cache = []
+    record_object = [None for _ in range (len(employee_detect_area_points))]
+    fuck = 0
+    sus_id_list = [None for _ in range (len(employee_detect_area_points))]
+
+    while not stop_thread:
+        print("inside check_employee_too_long stop_thread ", stop_thread)
+        itr += 1
+        itr1 = 0
+        employee_at_table_status = [] # 3 = occupied , 0 = unoccupied
+        employee_occupied = []
+        length = []
+        frame_cache = [[] for _ in range (len(employee_detect_area_points))]
+
+        try:
+            for table_no, _ in enumerate(employee_detect_area_points): #initialize list
+                employee_at_table_status.append(0)
+            # start checking for 3 sampling time at each tables
+            for i in range (0, 5):
+                print("i = ",i)
+                target_time = present_datetime + timedelta(seconds = 2)
+                itr1 += 1
+                count_person_at_table = count_person_at_table_cache.copy()
+                print(f"count_person_at_table_cache = {count_person_at_table_cache}")
+                for table_no, _ in enumerate(employee_detect_area_points):
+                    if availability_cache[table_no] == "occupied":
+                        print(f"i = {i}, table_no = , {table_no}")
+
+                        y_min_rec, y_max_rec = employee_record_area_point[table_no][0][1], employee_record_area_point[table_no][2][1]
+                        x_min_rec, x_max_rec = employee_record_area_point[table_no][0][0], employee_record_area_point[table_no][2][0]
+
+                        if len(frame_cache[table_no]) > 20:
+                            frame_cache[table_no].pop(0)
+
+                        frame = blank_frame_cache[y_min_rec:y_max_rec, x_min_rec:x_max_rec]
+                        
+                        frame_cache[table_no].append(frame)
+
+                        
+                        if count_person_at_table[table_no] > 0: #occupied detected that moment
+                            employee_at_table_status[table_no] += 1
+                        
+                        if stop_thread:
+                            break
+                while present_datetime < target_time and not stop_thread:
+                    time.sleep(1)
+
+                if stop_thread:
+                    break
+            
+            for item in frame_cache:
+                length.append(len(item))
+            print("length = ", length)
+            length.clear()
+            if stop_thread:
+                break
+            print(f"employee_at_table_status = {employee_at_table_status}")
+
+            # determining the meaning of state
+            for table_no, status_count in enumerate(employee_at_table_status):
+                if availability_cache[table_no] == "occupied":
+                    if status_count >= 5/2:   # occupied
+                        employee_occupied.append("occupied")
+                        if record_object[table_no] is None:
+
+                            #set name path with datetimenow
+                            video_filename = present_datetime.strftime("%Y%m%d%H%M%S" + ".mp4")
+                            path_to_save_PC = "../djangoAPP/mock_media/drawer_sus"
+                            path_to_save_DB = "/mock_media/drawer_sus"
+                            absolute_path = relate2abs_cvt(video_filename, path_to_save_PC)
+                            db_path = get_djangoapp_path(video_filename, path_to_save_DB)
+
+                            #start initializing recording
+                            size = employee_record_width_height[table_no]
+                            print("size = ", size)
+                            objrec = cv2.VideoWriter(absolute_path, cv2.VideoWriter_fourcc(*'H264'), 7, size)
+                            record_object[table_no] = objrec        
+                            while len(frame_cache[table_no]) > 0:
+                                fuck += 1
+                                print(f"while len(frame_cache[table_no]) = {len(frame_cache[table_no])}")
+                                frame = frame_cache[table_no].pop(0)
+                                print(f"fuck = {fuck}")
+                                #cv2.imwrite(f"fukkkkif{fuck}.jpg", frame)
+                                cv2.putText(frame,str(present_datetime.strftime('%Y-%m-%d %H:%M:%S')),(10,40),cv2.FONT_HERSHEY_PLAIN,2,(0,0,255),2,cv2.LINE_AA)
+                                record_object[table_no].write(frame)
+
+                            #find out the employeeID
+                            id_at_table = id_at_table_cache[table_no]
+                            person_data = shared_dict[id_at_table]
+                            _, employeeID = select_db("employee", ["employee_ID"], [f"employee_name = '{person_data.person_type}'"], verbose = True)
+                            
+                            #insert into database
+                            field_list = ["sus_type", "sus_employeeID", "sus_video", "sus_status", "sus_datetime", "sus_where"]
+                            value_list = [1, employeeID[0][0], db_path, 1, present_datetime, table_no+1]
+                            insert_db("suspicious_events", field_list, value_list, verbose=True)
+                            _, sus_id = select_db('suspicious_events', ['max(sus_ID)'], [f"sus_type = 1"])
+                            sus_id_list[table_no] = sus_id[0][0]
+                            
+
+                        elif record_object[table_no] is not None:
+                            #continue feed frame for recording
+                            print("record_object = ",record_object)
+                            while len(frame_cache[table_no]) > 0:
+                                fuck += 1
+                                print(f"while len(frame_cache[table_no]) = {len(frame_cache[table_no])}")
+                                print(f"fuck = {fuck}")
+                                frame = frame_cache[table_no].pop(0)
+                                #cv2.imwrite(f"fukkkkelif{fuck}.jpg", frame)
+                                cv2.putText(frame,str(present_datetime.strftime('%Y-%m-%d %H:%M:%S')),(10,40),cv2.FONT_HERSHEY_PLAIN,2,(0,0,255),2,cv2.LINE_AA)
+                                record_object[table_no].write(frame)
+                        
+                    else:                   #unoccupied
+                        employee_occupied.append("unoccupied")
+                        if record_object[table_no] is None:
+                            #Do nothing
+                            pass
+                        elif record_object[table_no] is not None:
+                            print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+                            #release recording
+                            sus_id_list[table_no] = None
+                            record_object[table_no].release()
+                            record_object[table_no] = None
+
+            print(f"sus_id_list = {sus_id_list}")
+            print(f"record_object = {record_object}")   
+            print(f"employee_occupied = {employee_occupied}")
+            employee_occupied_cache = employee_occupied.copy()
+            
+
+            
+
+        except Exception as e:
+            print("error: ", e)
+            traceback.print_exc()
+            stop_thread = True
+            stop_subprocess.set()
+    print('\033[93m' + f'check_employee_too_long stopped' + '\033[0m')
+
 
 
 def print_shared_key():
@@ -652,7 +802,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
     ## delete incomplete data with no customer out time before the process
 
     global stop_thread, frame_count, fps, frame_rate, present_datetime, list_realtime_count_cache, object2, fakeCamFrame, simulate_status, end_recording
-    global blank_frame_cache, total_frame_count, stop_check_drawer_open, person_in_cashier_cache, drawer_observing
+    global blank_frame_cache, total_frame_count, stop_check_drawer_open, person_in_cashier_cache, drawer_observing, count_person_at_table_cache, id_at_table_cache
     found_in_cashier_count = 0
     drawer_thread  = None
     person_in_cashier = None
@@ -695,6 +845,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
     thread5 = threading.Thread(target=record_customer_activities)
     thread6 = threading.Thread(target=update_shared_dict)
     thread7 = threading.Thread(target=print_shared_key)
+    thread8 = threading.Thread(target=check_employee_too_long)
     
     print('\033[92m' + f'Initializing Done!!!' + '\033[0m')
     print('\033[93m' + f'[Main Loop] Started!' + '\033[0m')
@@ -731,6 +882,8 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
         
         # Frame counting
         total_frame_count += 1
+
+        id_at_table = [None for _ in employee_record_area_point]
 
         ### Process the frame skipped ###
         if total_frame_count == 1 or (total_frame_count) % frame_skip == 0:
@@ -789,11 +942,17 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
 
                     is_customer = count_table_people(horizon_center, vertical_center)
                     
-                    #print('\033[91m' + 'to classify unknown_customer' + '\033[0m')
-                    #if person is customer
-                    classify_unknown_customer(local_dict, known_employee, id, is_customer, frame_count, present_datetime, 
-                                              (horizon_center, vertical_center),(int(bb[0]), int(bb[1])), (int(bb[2]), int(bb[3])),)
+                    classify_unknown_or_customer(local_dict, known_employee, id, is_customer, frame_count, present_datetime, 
+                                              (horizon_center, vertical_center),(int(bb[0]), int(bb[1])), (int(bb[2]), int(bb[3])),
+                                              frame_data)
                     
+                    if local_dict[id].person_type != "unknown" and local_dict[id].person_type != "customer":
+                        success, is_at_table = check_employee_at_table(horizon_center, vertical_center)
+                        #print("is_at_table = ", is_at_table)
+                        if success:
+                            id_at_table[is_at_table] = id
+
+
                     key_contain_in_frame.append(id)
 
                     #check if at cashier
@@ -868,11 +1027,14 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
 
             ### draw table area ###
             draw_table_point(frame_data, availability_cache)
-            #draw_from_points(frame_data, table_crop_points, (255, 0, 0))
+            draw_from_points(frame_data, table_crop_points, (255, 0, 0))
+            draw_from_points(frame_data, employee_record_area_point, (255, 0, 255))
             #draw_from_points(frame_data, plotted_points_recording, (0, 255, 255))
             draw_from_points(frame_data, drawer_detect_points, (0, 255, 255))
             draw_from_points(frame_data, cashier_area_points, (0, 0, 255))
             draw_from_points(frame_data, cashier_area_record, (0, 255, 0))
+            draw_from_points(frame_data, employee_detect_area_points, (255, 255, 0))
+            
 
             
             # put text on the bottom right bottom
@@ -893,7 +1055,10 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
             cv2.imshow("ObjectDetection", frame_data)
             #cv2.imwrite("sukrit_restaurant.jpg", frame) 
             list_realtime_count_cache = list_realtime_count.copy()
+            count_person_at_table_cache = count_person_at_table.copy()
+            id_at_table_cache = id_at_table.copy()
             reset_people_count()
+            reset_employee_at_table_count()
             
             if save_preview:
                 object1.add_frame(frame_data) # uncomment without recording cause memory leak!
@@ -910,6 +1075,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
             if check_available_started and not thread1.is_alive():
                 thread1.start() #calculate total person
                 thread5.start()
+                thread8.start()
 
             
             if check_available_started and any(item == "occupied" for item in availability_cache) and len(availability_cache) > 0:
@@ -963,7 +1129,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
         thread4.join() # When everything done, release the capture
     thread5.join() if thread5.is_alive() else None
     thread6.join() if thread6.is_alive() else None
-
+    thread8.join() if thread8.is_alive() else None
     if simulate:
         fakeCamThread.join()
 

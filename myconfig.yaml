@@ -15,7 +15,7 @@ frame_skip: 1
 video_frame:
   source: video
   simulate: True
-  url: "inference/videos/restaurant_test_human_inout_cashier_2round_with_drawer.mp4"
+  url: "inference/videos/test_employee_at_table_forward_full.mp4"
 
 live_frame:
   source: live_frame
@@ -142,3 +142,55 @@ cashier_record_area:
   pts1:
     - [258, 562]
     - [857, 1080]
+
+employee_detect_area:
+  pts1:
+    - [322, 144]
+    - [384, 115]
+    - [512, 250]
+    - [430, 291]
+  pts2:
+    - [463, 297]
+    - [571, 246]
+    - [813, 465]
+    - [667, 557]
+  pts3:
+    - [526, 0]
+    - [676, 0]
+    - [679, 68]
+    - [552, 114]
+  pts4:
+    - [712, 25]
+    - [900, 155]
+    - [808, 221]
+    - [634, 112]
+  pts5:
+    - [974, 144]
+    - [1228, 290]
+    - [1150, 384]
+    - [894, 266]
+  pts6:
+    - [1604, 313]
+    - [1910, 474]
+    - [1910, 630]
+    - [1550, 409]
+
+employee_record_area:
+  pts1:
+    - [41, 0]
+    - [456, 429]
+  pts2:
+    - [134, 160] #width = 584, height = 561 size =  (377, 539)
+    - [718, 721]
+  pts3:
+    - [463, 0]
+    - [759, 189]
+  pts4:
+    - [683, 0]
+    - [1093, 255]
+  pts5:
+    - [993, 0]
+    - [1598, 509]
+  pts6:
+    - [1543, 127]
+    - [1920, 666]

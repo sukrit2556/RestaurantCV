@@ -16,6 +16,7 @@ font = cv2.FONT_HERSHEY_COMPLEX
 table_points = []
 table_crop_points = []
 list_realtime_count = []
+count_person_at_table = []
 realtime_dimsum_found = []
 to_check = []
 fps = 0
@@ -78,6 +79,8 @@ class person():
         self.pixel_list = []
         self.top_left = top_left
         self.bottom_right = bottom_right
+        self.saved_frame = []
+        self.saved_frame_latest_dt = present_datetime
 
     def add_pixel(self, coordinate:tuple):
         """
@@ -155,6 +158,9 @@ table_crop_points = np.array(table_crop_points, dtype=np.int32)
 for _ in table_points:
     list_realtime_count.append(0)
 
+for _ in table_points:
+    count_person_at_table.append(0)
+
 # use for set status what to check dimsum
 for _ in table_points:
     to_check.append(0)
@@ -220,10 +226,39 @@ for key, value in  config['cashier_record_area'].items():
     cashier_record_width_height.append((width, height))
     cashier_area_record.append(full_shape)
 
+#for recording cashier area
+employee_detect_area_points = []
+
+# Access the points from the config dictionary
+for key, value in config["employee_detect_area"].items():
+    employee_detect_area_points.append(value)
+
+# Convert lists to numpy arrays
+employee_detect_area_points = np.array(employee_detect_area_points, dtype=np.int32)
+
+#for recording employee area
+employee_record_area_point = []
+employee_record_width_height = []
+for key, value in  config['employee_record_area'].items():
+    top_left = [value[0][0], value[0][1]]
+    top_right = [value[1][0], value[0][1]]
+    bottom_right = [value[1][0], value[1][1]]
+    bottom_left = [value[0][0], value[1][1]]
+    full_shape = [top_left, top_right, bottom_right, bottom_left]
+    width = value[1][0] - value[0][0]
+    height = value[1][1] - value[0][1]
+    employee_record_width_height.append((width, height))
+    employee_record_area_point.append(full_shape)
+
+print(employee_record_area_point)
+print(employee_record_width_height)
+
 plotted_points_recording = np.array(plotted_points, dtype=np.int32)
 drawer_detect_points = np.array(drawer_detect_points, dtype=np.int32)
 cashier_area_points = np.array(cashier_area_points, dtype=np.int32)
 cashier_area_record = np.array(cashier_area_record, dtype=np.int32)
+employee_detect_area_points = np.array(employee_detect_area_points, dtype=np.int32)
+employee_record_area_point = np.array(employee_record_area_point, dtype=np.int32)
 save_preview = config['save_preview']
 
 
@@ -344,10 +379,25 @@ def check_person_at_cashier(horizon_center, vertical_center):
         return True
     return False
 
+def check_employee_at_table(horizon_center, vertical_center):
+    for table_no, pts in enumerate(employee_detect_area_points):
+        pts = pts.tolist()
+        pts.append(pts[0])
+        edges = list(zip(pts, pts[1:] + pts[:1]))
+        if is_inside(edges, horizon_center, vertical_center):
+            count_person_at_table[table_no] += 1
+            return True, table_no
+    return False, None
+
 def reset_people_count():
     list_realtime_count.clear()
     for i in range (len(table_points)):
         list_realtime_count.append(0)
+
+def reset_employee_at_table_count():
+    count_person_at_table.clear()
+    for i in range (len(table_points)):
+        count_person_at_table.append(0)
       
 def put_text_bottom_right(frame, text_to_put_list):
     start_position_x = 500
@@ -440,7 +490,7 @@ def put_text_anywhere(frame, text_to_put_list:list, start_position_x, start_posi
         )
         start_position_y += 30
 
-def classify_unknown_customer(people_dict, known_employee, id, is_customer, frame_count, present_datetime, center_coord, top_left, bottom_right):
+def classify_unknown_or_customer(people_dict, known_employee, id, is_customer, frame_count, present_datetime, center_coord, top_left, bottom_right, frame_data):
 
     if is_customer:
         data = people_dict[id]
@@ -474,6 +524,7 @@ def classify_unknown_customer(people_dict, known_employee, id, is_customer, fram
         data.top_left = top_left
         data.bottom_right = bottom_right
         people_dict[id] = data
+    #if it's unknown or customer
     if people_dict[id].fixed == False:
         if (people_dict[id].probToBeCustomer > 0.5 and people_dict[id].person_type == "unknown"):
             data = people_dict[id]
@@ -501,6 +552,34 @@ def classify_unknown_customer(people_dict, known_employee, id, is_customer, fram
             data.fixed = True
             people_dict[id] = data
             del known_employee[id]
+    #if it's employee and fixed
+    elif people_dict[id].fixed == True and people_dict[id].person_type != "customer" and people_dict[id].person_type != "unknown":
+        #if employee has exchange with customer then have chance to reset to be unknown
+        if (people_dict[id].probToBeCustomer > 0.5 and 
+                people_dict[id].person_type != "customer" and people_dict[id].person_type != "unknown" and
+                people_dict[id].fixed == True):
+            data = people_dict[id]
+            data.person_type = "unknown"
+            data.fixed = False
+            data.saved_frame.clear()
+            people_dict[id] = data
+        #if it was employee then save the frame 
+        """if (people_dict[id].person_type != "customer" and people_dict[id].person_type != "unknown" and 
+            (present_datetime - people_dict[id].saved_frame_latest_dt).total_seconds() >= 4):
+            print(f"IM FUCKING ADD Frame FOR ID {id}")
+
+            data = people_dict[id]
+
+            #delete the exceed frame limit
+            if len(data.saved_frame) > 15:
+                data.saved_frame.pop(0)
+
+            print(f"len(data.saved_frame) = {len(data.saved_frame)}")
+                
+            data.saved_frame_latest_dt = present_datetime
+            data.saved_frame.append(frame_data)
+            people_dict[id] = data"""
+            
 
 
 
@@ -527,9 +606,5 @@ def update_local_dict(local_dict, key_contain_in_frame, now_frame):
 if __name__ == "__main__":
     #update_db("test", "name", "sukei", ["address = 'Highway21'", "text2 = 'suk'"])
     # Define the relative path to "djangoAPP/mock_media"
-    employeeID = 12
-    db_path = "testnow.mp4"
-    person_in_cashier_now = ""
-    field_list = ["sus_type", "sus_employeeID", "sus_video", "sus_status", "sus_datetime", "sus_where"]
-    value_list = [0, employeeID, db_path, 1, present_datetime, 0]
-    insert_db("suspicious_events", field_list, value_list)
+    _, sus_id = select_db('suspicious_events', ['max(sus_ID)'], [f"sus_where = 0"])
+    print(sus_id[0][0])
