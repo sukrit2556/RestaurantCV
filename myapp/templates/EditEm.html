@@ -1,65 +1,67 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-* {
-  box-sizing: border-box;
-}
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p"
+    crossorigin="anonymous"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
 
-#myInput {
-  width: 50%;
-  font-size: 16px;
-  border: 1px solid #ddd;
-  padding-left: 20px;
-}
+    #myInput {
+      width: 50%;
+      font-size: 16px;
+      border: 1px solid #ddd;
+      padding-left: 20px;
+    }
 
-#myTable {
-  width: 100%;
-}
+    #myTable {
+      width: 100%;
+    }
 
-#myTable th, #myTable td {
+    #myTable th,
+    #myTable td {}
 
-}
+    #myTable tr {}
 
-#myTable tr {
+    #myTable tr.header,
+    #myTable tr:hover {}
+  </style>
+  <!--style-->
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+  <!--fonts-->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt&display=swap" rel="stylesheet">
+  <link rel="icon" href="img/tab_logo.png">
+  <!----->
 
-}
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="Mark Otto, Jacob Thornton, and Bootstrap contributors">
+    <meta name="generator" content="Hugo 0.84.0">
 
-#myTable tr.header, #myTable tr:hover {
-  
-}
-</style>
-    <!-- bootstrap -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
-    <!--style-->
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
-    <!--fonts-->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Prompt&display=swap" rel="stylesheet">
-    <link rel="icon" href="img/tab_logo.png">
-    <!----->
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="description" content="">
-        <meta name="author" content="Mark Otto, Jacob Thornton, and Bootstrap contributors">
-        <meta name="generator" content="Hugo 0.84.0">
-    
-        <link rel="canonical" href="https://getbootstrap.com/docs/5.0/examples/sidebars/">
-    
-        
-    
-        <!-- Bootstrap core CSS -->
-    <link href="/docs/5.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
-    
-        <!-- Favicons -->
+    <link rel="canonical" href="https://getbootstrap.com/docs/5.0/examples/sidebars/">
+
+
+
+    <!-- Bootstrap core CSS -->
+    <link href="/docs/5.0/dist/css/bootstrap.min.css" rel="stylesheet"
+      integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+
+    <!-- Favicons -->
     <link rel="apple-touch-icon" href="/docs/5.0/assets/img/favicons/apple-touch-icon.png" sizes="180x180">
     <link rel="icon" href="/docs/5.0/assets/img/favicons/favicon-32x32.png" sizes="32x32" type="image/png">
     <link rel="icon" href="/docs/5.0/assets/img/favicons/favicon-16x16.png" sizes="16x16" type="image/png">
@@ -67,137 +69,147 @@
     <link rel="mask-icon" href="/docs/5.0/assets/img/favicons/safari-pinned-tab.svg" color="#7952b3">
     <link rel="icon" href="/docs/5.0/assets/img/favicons/favicon.ico">
     <meta name="theme-color" content="#7952b3">
-    
-    
-        <style>
-          .bd-placeholder-img {
-            font-size: 1.125rem;
-            text-anchor: middle;
-            -webkit-user-select: none;
-            -moz-user-select: none;
-            user-select: none;
-          }
-    
-          @media (min-width: 768px) {
-            .bd-placeholder-img-lg {
-              font-size: 3.5rem;
-            }
-          }
-        </style>
-    
-        
-        <!-- Custom styles for this template -->
-        <link href="sidebars.css" rel="stylesheet">
-      </head>
-    <title>Computer vision for restuarant | Menu</title>
+
+
+    <style>
+      .bd-placeholder-img {
+        font-size: 1.125rem;
+        text-anchor: middle;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        user-select: none;
+      }
+
+      .icon-bar {
+        width: 25px;
+        height: 25px;
+      }
+
+      .menu-bar {
+        width: 30px;
+        height: 30px;
+      }
+
+      @media (min-width: 768px) {
+        .bd-placeholder-img-lg {
+          font-size: 3.5rem;
+        }
+      }
+    </style>
+
+
+    <!-- Custom styles for this template -->
+    <link href="sidebars.css" rel="stylesheet">
+  </head>
+  <title>Computer vision for restuarant | Menu</title>
 </head>
 
-<body>
-    
+<body class="full-height">
 
-<!-- Image and text -->
-<nav class="navbar navbar-bg py-4">
-  <a class="navbar-brand mx-3" href="menu">
-    <div class="font-nav">
-      <img src="{% static 'img/eye1.png' %}" width="30" height="30" class="d-inline-block align-top" alt="">
-      <b>Computer vision for restuarant</b>
-    </div>
-  </a>
-  <div class="mx-3">
-    <a href="login" class="font-log op-butt align-top">
-      <b>Logout</b>
+
+  <!-- Image and text -->
+  <nav class="navbar navbar-bg py-4">
+    <a class="navbar-brand mx-3" href="menu">
+      <div class="font-nav">
+        <img src="{% static 'img/eye1.png' %}" width="30" height="30" class="d-inline-block align-top" alt="">
+        <b>Computer vision for restaurant</b>
+      </div>
     </a>
-    <b style="color: white;">|</b>
-    <b style="color: white;">Firstname Surname</b>
-    <!--<img class="rounded-circle" width="30" height="30" alt="" src="img/bl-pic.webp" />-->
-  </div>
-</nav>
-
-<div class="row">
-<div class="col-md-3">
-    <div class="d-flex flex-column flex-shrink-0 p-3 bg-light" style="max-width: 100%; height: 480px;">
-      <a href="{% url 'menu' %}" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto link-dark text-decoration-none">
-        <img src="{% static 'img/menu.png' %}" class="menu-bar me-2" alt="">
-        <span class="fs-4 align-items-center"><b>Menu</b></span>
+    <!--<div class="mx-3">
+      <a href="login" class="font-log op-butt align-top">
+        <b>Logout</b>
       </a>
-        <hr>
-        <ul class="nav nav-pills flex-column mb-auto">
+      <b style="color: white;">|</b>
+      <b style="color: white;">Firstname Surname</b>
+    </div>-->
+  </nav>
 
-          <li class="list-hov">
-            <a href="{% url 'CustTable' %}" class="nav-link link-dark mb-2">
-              <img src="{% static 'img/dinner2.png' %}" class="icon-bar me-2" alt="">
-              Customers Events
-            </a>
-          </li>
+  <div class="container-fluid full-height">
+    <div class="row full-height">
+      <div class="col-md-3 bg-light full-height">
 
-<!--          <li class="list-hov">
-            <a href="{% url 'EmTable' %}" class="nav-link link-dark mb-2">
-              <img src="{% static 'img/rest1.png' %}" class="icon-bar me-2" alt="">
-              Employees Events
-            </a>
-          </li> -->
+        <div class="d-flex flex-column py-3 full-height">
 
-          <li class="list-hov">
-            <a href="{% url 'SusTable' %}" class="nav-link link-dark mb-2">
-              <img src="{% static 'img/loupe1.png' %}" class="icon-bar me-2" alt="">
-              Suspicious Events
-            </a>
-          </li>
+          <a href="{% url 'menu' %}"
+            class="d-flex align-items-center mb-3 mb-md-0 me-md-auto link-dark text-decoration-none">
+            <img src="{% static 'img/menu.png' %}" class="menu-bar me-2" alt="">
+            <span class="fs-4 align-items-center"><b>Menu</b></span>
+          </a>
 
-          <li class="list-hov">
-            <a href="{% url 'ResTable' %}" class="nav-link link-dark mb-2">
-              <img src="{% static 'img/check1.png' %}" class="icon-bar me-2" alt="">
-              Resolved Events
-            </a>
-          </li>
+          <hr>
 
-          <li class="nav-item list-butt">
-            <a href="{% url 'ListTable' %}" class="nav-link link-dark mb-2" aria-current="page">
-              <img src="{% static 'img/id1.png' %}" class="icon-bar me-2" alt="">
-              List of employees
-            </a>
-          </li>
+          <ul class="nav nav-pills flex-column mb-auto">
 
-          <li class="list-hov">
-            <a href="{% url 'Dashboard' %}" class="nav-link link-dark mb-2">
-              <img src="{% static 'img/graph1.png' %}" class="icon-bar me-2" alt="">
-              Dashboard
-            </a>
-          </li>
+            <li class="list-hov">
+              <a href="/menu/CustTable/" class="nav-link link-dark py-3" style="width: 100%; height: 100%;">
+                <img src="/static/img/dinner2.png" class="icon-bar" alt="">
+                Customers Events
+              </a>
+            </li>
+            <li class="list-hov">
+              <a href="/menu/SusTable/" class="nav-link link-dark py-3" style="width: 100%; height: 100%;">
+                <img src="/static/img/loupe1.png" class="icon-bar me-2" alt="">
+                Suspicious Events
+              </a>
+            </li>
+            <li class="list-hov">
+              <a href="/menu/ResTable/" class="nav-link link-dark py-3" style="width: 100%; height: 100%;">
+                <img src="/static/img/check1.png" class="icon-bar me-2" alt="">
+                Resolved Events
+              </a>
+            </li>
+            <li class="nav-item list-butt">
+              <a href="/menu/ListTable/" class="nav-link link-dark py-3" style="width: 100%; height: 100%;">
+                <img src="/static/img/id1.png" class="icon-bar me-2" alt="">
+                List of employees
+              </a>
+            </li>
+            </li>
+            <li class="list-hov">
+              <a href="/menu/Dashboard" class="nav-link link-dark py-3" style="width: 100%; height: 100%;">
+                <img src="/static/img/graph1.png" class="icon-bar me-2" alt="">
+                Dashboard
+              </a>
+            </li>
 
-        </ul>
+          </ul>
+
+        </div>
       </div>
-</div> 
-<div class="col-md-9">
 
-    <h4 class="mt-4">Edit Employee</h4>
+      <div class="col-md-9 full-height">
 
-    <form method="post" enctype="multipart/form-data" action="{% url 'EditEm' id=employee_detail.employee_id %}">
-      {% csrf_token %}
-      <div class="row mt-5">
-          <div class="col-md-3">
-              <img src="{{ employee_detail.employee_image }}" alt="..." class="img-thumbnail mb-3" style="width: 200px; height: 200px; margin-left: 50px;">
-          </div>
-  
-          <div class="col-md-6" style="margin-left: 75px;">
-              <label for="id" class="mb-3">Employee ID: {{ employee_detail.employee_id }}</label><br>
-            
-              <label for="firstName">First name:</label>
-              <input id="firstName" name="first_name" class="form-control mb-3" style="width: 400px; border-radius: 50px; height: 38px;" type="text" placeholder="Enter first name" value="{{ employee_detail.employee_name }}">
-         
-              <label for="lastName">Last name:</label>
-              <input id="lastName" name="last_name" class="form-control mb-3" style="width: 400px; border-radius: 50px; height: 38px;" type="text" placeholder="Enter last name" value="{{ employee_detail.employee_sname }}">
-          
-              <label for="formFile" class="form-label">Upload new photo:</label>
-              <input name="photo" class="form-control" style="width: 400px; border-radius: 50px; height: 38px;" type="file" id="formFile">
-          
-              <button type="submit" style="border-radius: 50px; width: 80px; background-color: rgb(141, 172, 166); border-color: rgb(141, 172, 166);" class="btn btn-dark mt-4">
-                Save
-              </button>
-            
-          </div>
+          <h4 class="mt-4">Edit Employee</h4>
+
+          <form method="post" enctype="multipart/form-data" action="{% url 'EditEm' id=employee_detail.employee_id %}">
+            {% csrf_token %}
+            <div class="row mt-5">
+                <div class="col-md-3">
+                    <img src="{{ employee_detail.employee_image }}" alt="..." class="img-thumbnail mb-3" style="width: 200px; height: 200px; margin-left: 50px;">
+                </div>
+        
+                <div class="col-md-6" style="margin-left: 75px;">
+                    <label for="id" class="mb-3">Employee ID: {{ employee_detail.employee_id }}</label><br>
+                  
+                    <label for="firstName">First name:</label>
+                    <input id="firstName" name="first_name" class="form-control mb-3" style="width: 400px; border-radius: 50px; height: 38px;" type="text" placeholder="Enter first name" value="{{ employee_detail.employee_name }}">
+              
+                    <label for="lastName">Last name:</label>
+                    <input id="lastName" name="last_name" class="form-control mb-3" style="width: 400px; border-radius: 50px; height: 38px;" type="text" placeholder="Enter last name" value="{{ employee_detail.employee_sname }}">
+                
+                    <label for="formFile" class="form-label">Upload new photo:</label>
+                    <input name="photo" class="form-control" style="width: 400px; border-radius: 50px; height: 38px;" type="file" id="formFile">
+                
+                    <button type="submit" style="border-radius: 50px; width: 80px; background-color: rgb(141, 172, 166); border-color: rgb(141, 172, 166);" class="btn btn-dark mt-4">
+                      Save
+                    </button>
+                  
+                </div>
+            </div>
+          </form>
       </div>
-  </form>
-</div>
+
+    </div>
+  </div>
 </body>
 </html>

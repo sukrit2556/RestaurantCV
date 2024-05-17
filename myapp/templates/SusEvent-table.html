@@ -12,7 +12,30 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"
     integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p"
     crossorigin="anonymous"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
 
+    #myInput {
+      width: 50%;
+      font-size: 16px;
+      border: 1px solid #ddd;
+      padding-left: 20px;
+    }
+
+    #myTable {
+      width: 100%;
+    }
+
+    #myTable th,
+    #myTable td {}
+
+    #myTable tr {}
+
+    #myTable tr.header,
+    #myTable tr:hover {}
+  </style>
   <!--style-->
   <link rel="stylesheet" href="{% static 'css/style.css' %}">
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
@@ -57,40 +80,6 @@
         user-select: none;
       }
 
-      @media (min-width: 768px) {
-        .bd-placeholder-img-lg {
-          font-size: 3.5rem;
-        }
-      }
-
-      html,
-      body {
-        height: 100%;
-        margin: 0;
-      }
-
-      .full-height {
-        height: 100%;
-      }
-
-      .nav-bg {
-        background-color: rgb(141, 172, 166);
-      }
-
-      .navbar-bg {
-        background-color: rgb(197, 97, 97);
-      }
-
-      .font-nav {
-        font-family: 'Prompt', sans-serif;
-        font-size: 20px;
-      }
-
-      .font-log {
-        font-family: 'Prompt', sans-serif;
-        font-size: 18px;
-      }
-
       .icon-bar {
         width: 25px;
         height: 25px;
@@ -101,8 +90,10 @@
         height: 30px;
       }
 
-      .list-hov a:hover {
-        background-color: rgb(141, 172, 166);
+      @media (min-width: 768px) {
+        .bd-placeholder-img-lg {
+          font-size: 3.5rem;
+        }
       }
     </style>
 
@@ -110,7 +101,7 @@
     <!-- Custom styles for this template -->
     <link href="sidebars.css" rel="stylesheet">
   </head>
-  <title>Computer vision for restaurant | Menu</title>
+  <title>Computer vision for restuarant | Menu</title>
 </head>
 
 <body class="full-height">
@@ -124,14 +115,13 @@
         <b>Computer vision for restaurant</b>
       </div>
     </a>
-    <div class="mx-3">
+    <!--<div class="mx-3">
       <a href="login" class="font-log op-butt align-top">
         <b>Logout</b>
       </a>
       <b style="color: white;">|</b>
       <b style="color: white;">Firstname Surname</b>
-      <!--<img class="rounded-circle" width="30" height="30" alt="" src="img/bl-pic.webp" />-->
-    </div>
+    </div>-->
   </nav>
 
   <div class="container-fluid full-height">
@@ -179,8 +169,9 @@
           </ul>
         </div>
       </div>
+
       <div class="col-md-9 full-height">
-        <div class="card align-items-center mt-3" style="width: 100%; height: 100%;">
+        <div class="card align-items-center mt-3" style="width: 100%; height: 90%;">
           <div class="card-body text-center" style="height: 100%; width:100%;">
             <div style="max-height: 100%; overflow-y: auto;">
               <table class="table table-hover text-nowrap mx-3 text-center" style="width: 100%;">
@@ -251,7 +242,9 @@
           </div>
         </div>
       </div>
+
     </div>
+  </div>  
 
     <!-- Bootstrap Bundle with Popper -->
     <script>
@@ -308,7 +301,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"
       integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p"
       crossorigin="anonymous"></script>
-  </div>
+  
 </body>
 
 </html>

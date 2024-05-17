@@ -28,6 +28,41 @@
   <link href="https://fonts.googleapis.com/css2?family=Prompt&display=swap" rel="stylesheet">
   <link rel="icon" href="img/tab_logo.png">
   <!----->
+  
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    #myInput {
+      width: 50%;
+      font-size: 16px;
+      border: 1px solid #ddd;
+      padding-left: 20px;
+    }
+
+    #myTable {
+      width: 100%;
+    }
+
+    #myTable th,
+    #myTable td {}
+
+    #myTable tr {}
+
+    #myTable tr.header,
+    #myTable tr:hover {}
+  </style>
+  <!--style-->
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+  <!--fonts-->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt&display=swap" rel="stylesheet">
+  <link rel="icon" href="img/tab_logo.png">
+  <!----->
 
   <head>
     <meta charset="utf-8">
@@ -63,6 +98,16 @@
         user-select: none;
       }
 
+      .icon-bar {
+        width: 25px;
+        height: 25px;
+      }
+
+      .menu-bar {
+        width: 30px;
+        height: 30px;
+      }
+
       @media (min-width: 768px) {
         .bd-placeholder-img-lg {
           font-size: 3.5rem;
@@ -77,162 +122,157 @@
   <title>Computer vision for restuarant | Menu</title>
 </head>
 
-<body>
+<body class="full-height">
 
 
   <!-- Image and text -->
   <nav class="navbar navbar-bg py-4">
-    <a class="navbar-brand mx-3">
+    <a class="navbar-brand mx-3" href="menu">
       <div class="font-nav">
         <img src="{% static 'img/eye1.png' %}" width="30" height="30" class="d-inline-block align-top" alt="">
-        <b>Computer vision for restuarant</b>
+        <b>Computer vision for restaurant</b>
       </div>
     </a>
-    <div class="mx-3">
+    <!--<div class="mx-3">
       <a href="login" class="font-log op-butt align-top">
         <b>Logout</b>
       </a>
       <b style="color: white;">|</b>
       <b style="color: white;">Firstname Surname</b>
-      <!--<img class="rounded-circle" width="30" height="30" alt="" src="img/bl-pic.webp" />-->
-    </div>
+    </div>-->
   </nav>
 
-  <div class="row">
-    <div class="col-md-3">
-      <div class="d-flex flex-column flex-shrink-0 p-3 bg-light" style="max-width: 100%; height: 565px;">
-        <a href="{% url 'menu' %}"
-          class="d-flex align-items-center mb-3 mb-md-0 me-md-auto link-dark text-decoration-none">
-          <img src="{% static 'img/menu.png' %}" class="menu-bar me-2" alt="">
-          <span class="fs-4 align-items-center"><b>Menu</b></span>
-        </a>
-        <hr>
-        <ul class="nav nav-pills flex-column mb-auto">
+  <div class="container-fluid full-height">
+    <div class="row full-height">
+      <div class="col-md-3 bg-light full-height">
 
-          <li class="nav-item list-butt">
-            <a href="{% url 'CustTable' %}" class="nav-link link-dark mb-2 n" aria-current="page">
-              <img src="{% static 'img/dinner2.png' %}" class="icon-bar me-2" alt="">
-              Customers Events
-            </a>
-          </li>
+        <div class="d-flex flex-column py-3 full-height">
 
-          <!--          <li class="list-hov">
-            <a href="{% url 'EmTable' %}" class="nav-link link-dark mb-2">
-              <img src="{% static 'img/rest1.png' %}" class="icon-bar me-2" alt="">
-              Employees Events
-            </a>
-          </li> -->
+          <a href="{% url 'menu' %}"
+            class="d-flex align-items-center mb-3 mb-md-0 me-md-auto link-dark text-decoration-none">
+            <img src="{% static 'img/menu.png' %}" class="menu-bar me-2" alt="">
+            <span class="fs-4 align-items-center"><b>Menu</b></span>
+          </a>
 
-          <li class="list-hov">
-            <a href="{% url 'SusTable' %}" class="nav-link link-dark mb-2">
-              <img src="{% static 'img/loupe1.png' %}" class="icon-bar me-2" alt="">
-              Suspicious Events
-            </a>
-          </li>
+          <hr>
 
-          <li class="list-hov">
-            <a href="{% url 'ResTable' %}" class="nav-link link-dark mb-2">
-              <img src="{% static 'img/check1.png' %}" class="icon-bar me-2" alt="">
-              Resolved Events
-            </a>
-          </li>
+          <ul class="nav nav-pills flex-column mb-auto">
 
-          <li class="list-hov">
-            <a href="{% url 'ListTable' %}" class="nav-link link-dark mb-2">
-              <img src="{% static 'img/id1.png' %}" class="icon-bar me-2" alt="">
-              List of employees
-            </a>
-          </li>
+            <li class="nav-item list-butt">
+              <a href="/menu/CustTable/" class="nav-link link-dark py-3" style="width: 100%; height: 100%;">
+                <img src="/static/img/dinner2.png" class="icon-bar" alt="">
+                Customers Events
+              </a>
+            </li>
+            <li class="list-hov">
+              <a href="/menu/SusTable/" class="nav-link link-dark py-3" style="width: 100%; height: 100%;">
+                <img src="/static/img/loupe1.png" class="icon-bar me-2" alt="">
+                Suspicious Events
+              </a>
+            </li>
+            <li class="list-hov">
+              <a href="/menu/ResTable/" class="nav-link link-dark py-3" style="width: 100%; height: 100%;">
+                <img src="/static/img/check1.png" class="icon-bar me-2" alt="">
+                Resolved Events
+              </a>
+            </li>
+            <li class="list-hov">
+              <a href="/menu/ListTable/" class="nav-link link-dark py-3" style="width: 100%; height: 100%;">
+                <img src="/static/img/id1.png" class="icon-bar me-2" alt="">
+                List of employees
+              </a>
+            </li>
+            </li>
+            <li class="list-hov">
+              <a href="/menu/Dashboard" class="nav-link link-dark py-3" style="width: 100%; height: 100%;">
+                <img src="/static/img/graph1.png" class="icon-bar me-2" alt="">
+                Dashboard
+              </a>
+            </li>
 
-          <li class="list-hov">
-            <a href="{% url 'Dashboard' %}" class="nav-link link-dark mb-2">
-              <img src="{% static 'img/graph1.png' %}" class="icon-bar me-2" alt="">
-              Dashboard
-            </a>
-          </li>
+          </ul>
 
-        </ul>
+        </div>
       </div>
-    </div>
 
-    <div class="col-9">
-      <div class="row mt-3">
-        <div class="col-md-8">
+      <div class="col-9">
+        <div class="row mt-3">
+          <div class="col-md-8">
 
-          <div id="accordion">
-            <div class="card">
-              <div class="card-header" style="height: 50px; text-align: center; padding: 0;" id="headingOne">
-                <button class="btn btn-link collapsed"
-                  style="color: rgb(151, 151, 151); text-decoration: none; padding: 0; height:100%; width: 100%;"
-                  data-toggle="collapse" data-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
-                  <div class="d-flex justify-content-between">
-                    <span style="padding: 0 20px;">Get food frame</span>
-                    <span style="padding: 0 20px;">▼</span>
+            <div id="accordion">
+              <div class="card">
+                <div class="card-header" style="height: 50px; text-align: center; padding: 0;" id="headingOne">
+                  <button class="btn btn-link collapsed"
+                    style="color: rgb(151, 151, 151); text-decoration: none; padding: 0; height:100%; width: 100%;"
+                    data-toggle="collapse" data-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+                    <div class="d-flex justify-content-between">
+                      <span style="padding: 0 20px;">Get food frame</span>
+                      <span style="padding: 0 20px;">▼</span>
+                    </div>
+                  </button>
+                </div>
+                <div id="collapseOne" class="collapse show" aria-labelledby="headingOne" data-parent="#accordion">
+                  <div class="card-body text-center">
+                    {% if customer_detail.getfood_frame %}
+                    <img src="{{ customer_detail.getfood_frame }}" class="align-items-center d-block img-fluid"
+                      style="max-width: 575px; max-height: 350px;" alt="...">
+                    {% else %}
+                    <p>No image available.</p>
+                    {% endif %}
                   </div>
-                </button>
+                </div>
               </div>
-              <div id="collapseOne" class="collapse show" aria-labelledby="headingOne" data-parent="#accordion">
-                <div class="card-body text-center">
-                  {% if customer_detail.getfood_frame %}
-                  <img src="{{ customer_detail.getfood_frame }}" class="align-items-center d-block img-fluid"
-                    style="max-width: 575px; max-height: 350px;" alt="...">
-                  {% else %}
-                  <p>No image available.</p>
-                  {% endif %}
+              <div class="card">
+                <div class="card-header" style="height: 50px; text-align: center; padding: 0;" id="headingTwo">
+                  <button class="btn btn-link collapsed"
+                    style="color: rgb(151, 151, 151); text-decoration: none; padding: 0; height:100%; width: 100%;"
+                    data-toggle="collapse" data-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                    <div class="d-flex justify-content-between">
+                      <span style="padding: 0 20px;">Video</span>
+                      <span style="padding: 0 20px;">▼</span>
+                    </div>
+                  </button>
+                </div>
+                <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordion">
+                  <div class="card-body text-center">
+                    {% if customer_detail.captured_video %}
+                    <video width="400" controls style="width: 575px; height: 350px;">
+                      <source src="{{ customer_detail.captured_video }}" type="video/mp4">
+                      Your browser does not support HTML video.
+                    </video>
+                    {% else %}
+                    <p>No captured video available.</p>
+                    {% endif %}
+                  </div>
                 </div>
               </div>
             </div>
-            <div class="card">
-              <div class="card-header" style="height: 50px; text-align: center; padding: 0;" id="headingTwo">
-                <button class="btn btn-link collapsed"
-                  style="color: rgb(151, 151, 151); text-decoration: none; padding: 0; height:100%; width: 100%;"
-                  data-toggle="collapse" data-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
-                  <div class="d-flex justify-content-between">
-                    <span style="padding: 0 20px;">Video</span>
-                    <span style="padding: 0 20px;">▼</span>
-                  </div>
-                </button>
-              </div>
-              <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordion">
-                <div class="card-body text-center">
-                  {% if customer_detail.captured_video %}
-                  <video width="400" controls style="width: 575px; height: 350px;">
-                    <source src="{{ customer_detail.captured_video }}" type="video/mp4">
-                    Your browser does not support HTML video.
-                  </video>
-                  {% else %}
-                  <p>No captured video available.</p>
-                  {% endif %}
-                </div>
-              </div>
+
+          </div>
+          <div class="card" style="width: 280px; height: 80%;">
+            <div class="card-body">
+              <p class="text-center"><strong>More details</strong></p>
+              <hr>
+              <p><strong>Table number: </strong>{{ customer_detail.tableid }}</p>
+              <p><strong>Customer ID: </strong>{{ customer_detail.customer_id }}</p>
+              <p><strong>Amount of customer: </strong>
+                <li class="list-inline-item">{{ customer_detail.customer_amount }} person</li>
+              </p>
+              <p><strong>Customer in time: </strong>{{ customer_detail.customer_in|time:"g:i A" }}</p>
+              <p><strong>Customer out time: </strong>{{ customer_detail.customer_out|time:"g:i A" }}</p>
+              <p><strong>Waiting for food: </strong>{{ waiting_time_formatted }}</p>
+              <p><strong>Time spent: </strong>
+                <li class="list-inline-item">{{ time_spent_formatted }}</li>
+              </p>
             </div>
           </div>
 
         </div>
-        <div class="card" style="width: 280px; height: 450px;">
-          <div class="card-body">
-            <p class="text-center"><strong>More details</strong></p>
-            <hr>
-            <p><strong>Table number: </strong>{{ customer_detail.tableid }}</p>
-            <p><strong>Customer ID: </strong>{{ customer_detail.customer_id }}</p>
-            <p><strong>Amount of customer: </strong>
-              <li class="list-inline-item">{{ customer_detail.customer_amount }} person</li>
-            </p>
-            <p><strong>Customer in time: </strong>{{ customer_detail.customer_in|time:"g:i A" }}</p>
-            <p><strong>Customer out time: </strong>{{ customer_detail.customer_out|time:"g:i A" }}</p>
-            <p><strong>Waiting for food: </strong>{{ waiting_time_formatted }}</p>
-            <p><strong>Time spent: </strong>
-              <li class="list-inline-item">{{ time_spent_formatted }}</li>
-            </p>
-          </div>
-        </div>
-
       </div>
-      <div class="row mt-5">
 
-      </div>
     </div>
   </div>
+  
 </body>
 
 </html>

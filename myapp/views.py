@@ -323,6 +323,11 @@ from django.db.models.functions import ExtractDay
 from django.db.models import Avg, ExpressionWrapper, fields, F, DurationField, Sum
 from django.db.models.functions import TruncDate
 from datetime import timedelta
+from collections import defaultdict
+from datetime import datetime
+from collections import defaultdict
+from django.shortcuts import render
+from .models import CustomerEvents
 
 
 def Dashboard(request):
@@ -333,7 +338,24 @@ def Dashboard(request):
     ).values('month', 'year').annotate(
         total_customers=Sum('customer_amount')
     )
+    
+    table_counts = defaultdict(int)
 
+    try:
+        # Fetch CustomerEvents data and count occurrences of each table ID
+        customer_events = CustomerEvents.objects.filter(tableid__lte=6)
+        for event in customer_events:
+            table_counts[event.tableid] += 1
+    except Exception as e:
+        # Handle any exceptions or errors gracefully
+        print(f"Error fetching or processing data: {e}")
+        table_counts = {}  # Set table_counts to empty dictionary in case of error
+
+    table_counts = dict(table_counts)
+
+    table_labels = list(table_counts.keys())
+    table_data = list(table_counts.values())
+    
     # Fetching data for the count of records for each sus_type (0 for drawer type and 1 for employee type)
     sus_type_counts = SuspiciousEvents.objects.values('sus_type').annotate(count=Count('*'))
 
@@ -358,6 +380,29 @@ def Dashboard(request):
             unresolved_count = item['count']
 
     customer_events = CustomerEvents.objects.all()
+    
+
+    # Initialize defaultdict to store dining duration data per day
+    dining_duration_data = defaultdict(list)
+
+    # Iterate over each customer event
+    for event in customer_events:
+        # Check if the customer left the restaurant
+        if event.customer_out:
+            # Calculate dining duration
+            dining_duration = event.customer_out - event.customer_in
+            # Extract the date
+            day = event.customer_in.date()
+            # Append dining duration to the list corresponding to the date
+            dining_duration_data[day].append(dining_duration.total_seconds() / 60)
+
+    # Calculate average dining duration per day
+    avg_dining_per_day = {day: sum(durations) / len(durations) for day, durations in dining_duration_data.items()}
+    avg_dining_per_day = dict(sorted(avg_dining_per_day.items()))
+
+    # Extract dining duration data and date labels for the chart
+    dining_data = list(avg_dining_per_day.values())
+    dining_labels = [day.strftime('%Y-%m-%d') for day in avg_dining_per_day.keys()]
 
     # Calculate waiting time for each event and group by date
     waiting_data = {}  # Dictionary to store waiting time per day
@@ -393,6 +438,37 @@ def Dashboard(request):
         total_customerss=Sum('customer_amount')
     ).order_by('-total_customerss')[:3]
 
+    # Fetching data from the CustomerEvents table and aggregating the total customer amount per hour
+    customers_by_hour = CustomerEvents.objects.extra(
+        select={'hour': 'EXTRACT(hour FROM customer_in)'}
+    ).values('hour').annotate(
+        total_customers=Count('customer_id')
+    ).order_by('hour')
+
+    # Initialize a dictionary to store the total customers per hour
+    customer_counts = {hour: 0 for hour in range(24)}
+
+    # Populate the dictionary with the aggregated data
+    for entry in customers_by_hour:
+        customer_counts[int(entry['hour'])] = entry['total_customers']
+
+    # Find the most popular periods
+    most_popular_periods = {}
+    for hour in range(24):
+        # Calculate the end hour for the period
+        end_hour = (hour + 1) % 24
+        period_start = datetime.strptime(f'{hour:02d}', '%H').strftime('%I %p')
+        period_end = datetime.strptime(f'{end_hour:02d}', '%H').strftime('%I %p')
+
+        # Store the period and its total customers
+        most_popular_periods[f'{period_start} - {period_end}'] = customer_counts[hour]
+
+    # Sort the periods by total customers in descending order
+    most_popular_periods = dict(sorted(most_popular_periods.items(), key=lambda item: item[1], reverse=True))
+
+    # Extract the top 3 most popular periods
+    top_periods = list(most_popular_periods.items())[:3]
+
     context = {
         'labels': labels,
         'data': data,
@@ -403,6 +479,13 @@ def Dashboard(request):
         'unresolved_count': unresolved_count,
         'waiting_labels': waiting_labels,
         'waiting_data': waiting_data,
+        'dining_data': dining_data,
+        'dining_labels': dining_labels,
+        'top_months': top_months,
+        'table_counts': table_counts,
+        'table_labels': table_labels,
+        'table_data': table_data,
+        'top_periods': top_periods,
     }
 
     return render(request, 'Dashboard.html', context)
