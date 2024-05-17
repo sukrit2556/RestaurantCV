@@ -101,7 +101,6 @@ def CustDetail(request, id):
   
 def CustTable(request):
     customer_events = CustomerEvents.objects.all().order_by('-customer_in').values()
-    print(customer_events)
     context = {
         'customer_events': customer_events
     }
