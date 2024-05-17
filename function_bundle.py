@@ -250,9 +250,6 @@ for key, value in  config['employee_record_area'].items():
     employee_record_width_height.append((width, height))
     employee_record_area_point.append(full_shape)
 
-print(employee_record_area_point)
-print(employee_record_width_height)
-
 plotted_points_recording = np.array(plotted_points, dtype=np.int32)
 drawer_detect_points = np.array(drawer_detect_points, dtype=np.int32)
 cashier_area_points = np.array(cashier_area_points, dtype=np.int32)

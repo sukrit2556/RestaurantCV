@@ -497,7 +497,7 @@ def check_drawer_open():
     model = YOLO(config['drawer_model_path'])
     status_record = False
     open_found = 0
-    itr = 15
+    itr = 50
     status_before_is_open = False
     status_now_is_open = False
     cashier_record = None
@@ -655,7 +655,7 @@ def check_employee_too_long():
         itr += 1
         itr1 = 0
         employee_at_table_status = [] # 3 = occupied , 0 = unoccupied
-        employee_occupied = []
+        employee_occupied = [None for _ in range (len(employee_detect_area_points))]
         length = []
         frame_cache = [[] for _ in range (len(employee_detect_area_points))]
 
@@ -707,7 +707,7 @@ def check_employee_too_long():
             for table_no, status_count in enumerate(employee_at_table_status):
                 if availability_cache[table_no] == "occupied":
                     if status_count >= 5/2:   # occupied
-                        employee_occupied.append("occupied")
+                        employee_occupied[table_no] = "occupied"
                         if record_object[table_no] is None:
 
                             #set name path with datetimenow
@@ -757,7 +757,7 @@ def check_employee_too_long():
                                 record_object[table_no].write(frame)
                         
                     else:                   #unoccupied
-                        employee_occupied.append("unoccupied")
+                        employee_occupied[table_no] = "unoccupied"
                         if record_object[table_no] is None:
                             #Do nothing
                             pass
@@ -772,15 +772,15 @@ def check_employee_too_long():
             print(f"record_object = {record_object}")   
             print(f"employee_occupied = {employee_occupied}")
             employee_occupied_cache = employee_occupied.copy()
-            
-
-            
 
         except Exception as e:
             print("error: ", e)
             traceback.print_exc()
             stop_thread = True
             stop_subprocess.set()
+    for item in record_object:
+        if item is not None and item.isOpened():
+            item.release()
     print('\033[93m' + f'check_employee_too_long stopped' + '\033[0m')
 
 
