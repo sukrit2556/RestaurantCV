@@ -567,8 +567,6 @@ def check_drawer_open():
             open_found = 0
             
             person_in_cashier_now = person_in_cashier_cache #id
-            print("person_in_cashier_now = ", person_in_cashier_now)
-            print(f"status_before_is_open = {status_before_is_open}, status_now_is_open = {status_now_is_open}")
             #Case 1: if drawer were detected open
             if status_before_is_open == False and status_now_is_open == True:
 
@@ -723,7 +721,6 @@ def check_employee_too_long():
             length.clear()
             if stop_thread:
                 break
-            print(f"employee_at_table_status = {employee_at_table_status}")
 
             # determining the meaning of state
             for table_no, status_count in enumerate(employee_at_table_status):
@@ -1028,7 +1025,6 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
 
             #drawer status 0 = nothing to do, 1 to do/doing 
             if frame_count % 15 == 0:
-                print(f"found_in_cashier_count = {found_in_cashier_count}")
                 if found_in_cashier_count > 15/3:
                     if drawer_observing == False:
                         stop_check_drawer_open = False
