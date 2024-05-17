@@ -497,7 +497,7 @@ def check_drawer_open():
     model = YOLO(config['drawer_model_path'])
     status_record = False
     open_found = 0
-    itr = 50
+    itr = 25
     status_before_is_open = False
     status_now_is_open = False
     cashier_record = None
@@ -522,11 +522,35 @@ def check_drawer_open():
             for _ in range (itr):
                 cashier_area = blank_frame_cache[y_min:y_max, x_min:x_max]
                 cashier_area_rec = blank_frame_cache[y_min_rec:y_max_rec, x_min_rec:x_max_rec]
+                
 
                 #use model detection
                 
                 results = model(source=[cashier_area], conf=0.6, show=False, save=False, classes=[0], verbose=False)
                 annotated_frame = results[0].plot()
+
+                result_length = results[0].cpu().numpy()
+                if len(result_length) != 0:
+                
+                    for i in range(len(results[0])):
+
+                        boxes = results[0].boxes
+                        box = boxes[i]  # returns one box
+                        bb = box.xyxy.cpu().numpy()[0]
+                        x_rec_min = int(bb[0]+x_min-x_min_rec)
+                        y_rec_min = int(bb[1]+y_min-y_min_rec)
+                        x_rec_max = int(bb[2]+x_min-x_min_rec)
+                        y_rec_max = int(bb[3]+y_min-y_min_rec)
+
+
+                        cv2.rectangle(
+                            cashier_area_rec,
+                            (x_rec_min, y_rec_min),
+                            (x_rec_max, y_rec_max),
+                            (0, 0, 255),
+                            3,
+                        )
+
                 # Convert tensor array to numpy
                 if len(results[0]) > 0:
                     open_found += 1
@@ -579,8 +603,8 @@ def check_drawer_open():
                         insert_db("suspicious_events", field_list, value_list, verbose=True)
 
                         #put text of time in frame
-                        cv2.putText(annotated_frame,str(present_datetime.strftime('%Y-%m-%d %H:%M:%S')),(10,40),cv2.FONT_HERSHEY_PLAIN,2,(0,0,255),2,cv2.LINE_AA)
-                        cashier_record.write(annotated_frame)
+                        cv2.putText(cashier_area_rec,str(present_datetime.strftime('%Y-%m-%d %H:%M:%S')),(10,40),cv2.FONT_HERSHEY_PLAIN,2,(0,0,255),2,cv2.LINE_AA)
+                        cashier_record.write(cashier_area_rec)
 
                         status_record = not status_record
                         _, sus_id = select_db('suspicious_events', ['max(sus_ID)'], [f"sus_where = 0"])
@@ -593,16 +617,16 @@ def check_drawer_open():
                     #prevent dict error before insert suspicious event
                     if person_in_cashier_now in shared_dict:
                         insert_db("suspicious_events", field_list, value_list)
-                        cv2.putText(annotated_frame,str(present_datetime.strftime('%Y-%m-%d %H:%M:%S')),(10,40),cv2.FONT_HERSHEY_PLAIN,2,(0,0,255),2,cv2.LINE_AA)
-                        cashier_record.write(annotated_frame)
+                        cv2.putText(cashier_area_rec,str(present_datetime.strftime('%Y-%m-%d %H:%M:%S')),(10,40),cv2.FONT_HERSHEY_PLAIN,2,(0,0,255),2,cv2.LINE_AA)
+                        cashier_record.write(cashier_area_rec)
                         status_record = not status_record
                         _, sus_id = select_db('suspicious_events', ['max(sus_ID)'], [f"sus_where = 0"])
                         print('\033[91m' + f'**check_drawer_open started recording WITHOUT knowing who open' + '\033[0m')
 
             #Case 2: if the drawer is already opened
             elif status_before_is_open == True and status_now_is_open == True:
-                cv2.putText(annotated_frame,str(present_datetime.strftime('%Y-%m-%d %H:%M:%S')),(10,40),cv2.FONT_HERSHEY_PLAIN,2,(0,0,255),2,cv2.LINE_AA)
-                cashier_record.write(annotated_frame)
+                cv2.putText(cashier_area_rec,str(present_datetime.strftime('%Y-%m-%d %H:%M:%S')),(10,40),cv2.FONT_HERSHEY_PLAIN,2,(0,0,255),2,cv2.LINE_AA)
+                cashier_record.write(cashier_area_rec)
 
                 #prevent dict error
                 while shared_dict_update_inprogress.is_set():
@@ -649,29 +673,27 @@ def check_employee_too_long():
     record_object = [None for _ in range (len(employee_detect_area_points))]
     fuck = 0
     sus_id_list = [None for _ in range (len(employee_detect_area_points))]
+    person_type_cache = [None for _ in range (len(employee_detect_area_points))]
 
     while not stop_thread:
-        print("inside check_employee_too_long stop_thread ", stop_thread)
         itr += 1
         itr1 = 0
         employee_at_table_status = [] # 3 = occupied , 0 = unoccupied
         employee_occupied = [None for _ in range (len(employee_detect_area_points))]
         length = []
         frame_cache = [[] for _ in range (len(employee_detect_area_points))]
+        timeframe_cache = [[] for _ in range (len(employee_detect_area_points))]
 
         try:
             for table_no, _ in enumerate(employee_detect_area_points): #initialize list
                 employee_at_table_status.append(0)
             # start checking for 3 sampling time at each tables
-            for i in range (0, 5):
-                print("i = ",i)
+            for i in range (0, 15):
                 target_time = present_datetime + timedelta(seconds = 2)
                 itr1 += 1
                 count_person_at_table = count_person_at_table_cache.copy()
-                print(f"count_person_at_table_cache = {count_person_at_table_cache}")
                 for table_no, _ in enumerate(employee_detect_area_points):
                     if availability_cache[table_no] == "occupied":
-                        print(f"i = {i}, table_no = , {table_no}")
 
                         y_min_rec, y_max_rec = employee_record_area_point[table_no][0][1], employee_record_area_point[table_no][2][1]
                         x_min_rec, x_max_rec = employee_record_area_point[table_no][0][0], employee_record_area_point[table_no][2][0]
@@ -682,6 +704,7 @@ def check_employee_too_long():
                         frame = blank_frame_cache[y_min_rec:y_max_rec, x_min_rec:x_max_rec]
                         
                         frame_cache[table_no].append(frame)
+                        timeframe_cache[table_no].append(present_datetime)
 
                         
                         if count_person_at_table[table_no] > 0: #occupied detected that moment
@@ -697,7 +720,6 @@ def check_employee_too_long():
             
             for item in frame_cache:
                 length.append(len(item))
-            print("length = ", length)
             length.clear()
             if stop_thread:
                 break
@@ -706,9 +728,15 @@ def check_employee_too_long():
             # determining the meaning of state
             for table_no, status_count in enumerate(employee_at_table_status):
                 if availability_cache[table_no] == "occupied":
-                    if status_count >= 5/2:   # occupied
+                    if status_count >= 15/2:   # occupied
                         employee_occupied[table_no] = "occupied"
                         if record_object[table_no] is None:
+
+                            #find out the employeeID
+                            if person_type_cache[table_no] == None:
+                                id_at_table = id_at_table_cache[table_no]
+                                person_type = shared_dict[id_at_table].person_type
+                                person_type_cache[table_no] = person_type
 
                             #set name path with datetimenow
                             video_filename = present_datetime.strftime("%Y%m%d%H%M%S" + ".mp4")
@@ -719,22 +747,18 @@ def check_employee_too_long():
 
                             #start initializing recording
                             size = employee_record_width_height[table_no]
-                            print("size = ", size)
                             objrec = cv2.VideoWriter(absolute_path, cv2.VideoWriter_fourcc(*'H264'), 7, size)
                             record_object[table_no] = objrec        
                             while len(frame_cache[table_no]) > 0:
                                 fuck += 1
-                                print(f"while len(frame_cache[table_no]) = {len(frame_cache[table_no])}")
                                 frame = frame_cache[table_no].pop(0)
-                                print(f"fuck = {fuck}")
+                                timeframe = timeframe_cache[table_no].pop(0)
                                 #cv2.imwrite(f"fukkkkif{fuck}.jpg", frame)
-                                cv2.putText(frame,str(present_datetime.strftime('%Y-%m-%d %H:%M:%S')),(10,40),cv2.FONT_HERSHEY_PLAIN,2,(0,0,255),2,cv2.LINE_AA)
+                                cv2.putText(frame,str(timeframe.strftime('%Y-%m-%d %H:%M:%S')),(10,40),cv2.FONT_HERSHEY_PLAIN,2,(0,0,255),2,cv2.LINE_AA)
                                 record_object[table_no].write(frame)
 
-                            #find out the employeeID
-                            id_at_table = id_at_table_cache[table_no]
-                            person_data = shared_dict[id_at_table]
-                            _, employeeID = select_db("employee", ["employee_ID"], [f"employee_name = '{person_data.person_type}'"], verbose = True)
+                            
+                            _, employeeID = select_db("employee", ["employee_ID"], [f"employee_name = '{person_type_cache[table_no]}'"], verbose = True)
                             
                             #insert into database
                             field_list = ["sus_type", "sus_employeeID", "sus_video", "sus_status", "sus_datetime", "sus_where"]
@@ -746,14 +770,12 @@ def check_employee_too_long():
 
                         elif record_object[table_no] is not None:
                             #continue feed frame for recording
-                            print("record_object = ",record_object)
                             while len(frame_cache[table_no]) > 0:
                                 fuck += 1
-                                print(f"while len(frame_cache[table_no]) = {len(frame_cache[table_no])}")
-                                print(f"fuck = {fuck}")
                                 frame = frame_cache[table_no].pop(0)
+                                timeframe = timeframe_cache[table_no].pop(0)
                                 #cv2.imwrite(f"fukkkkelif{fuck}.jpg", frame)
-                                cv2.putText(frame,str(present_datetime.strftime('%Y-%m-%d %H:%M:%S')),(10,40),cv2.FONT_HERSHEY_PLAIN,2,(0,0,255),2,cv2.LINE_AA)
+                                cv2.putText(frame,str(timeframe.strftime('%Y-%m-%d %H:%M:%S')),(10,40),cv2.FONT_HERSHEY_PLAIN,2,(0,0,255),2,cv2.LINE_AA)
                                 record_object[table_no].write(frame)
                         
                     else:                   #unoccupied
@@ -762,15 +784,12 @@ def check_employee_too_long():
                             #Do nothing
                             pass
                         elif record_object[table_no] is not None:
-                            print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
                             #release recording
                             sus_id_list[table_no] = None
                             record_object[table_no].release()
                             record_object[table_no] = None
+                            person_type_cache[table_no] = None
 
-            print(f"sus_id_list = {sus_id_list}")
-            print(f"record_object = {record_object}")   
-            print(f"employee_occupied = {employee_occupied}")
             employee_occupied_cache = employee_occupied.copy()
 
         except Exception as e:
@@ -1008,9 +1027,9 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
             person_in_cashier_cache = person_in_cashier
 
             #drawer status 0 = nothing to do, 1 to do/doing 
-            if frame_count % 10 == 0:
+            if frame_count % 15 == 0:
                 print(f"found_in_cashier_count = {found_in_cashier_count}")
-                if found_in_cashier_count > 10/2.5:
+                if found_in_cashier_count > 15/3:
                     if drawer_observing == False:
                         stop_check_drawer_open = False
                         drawer_thread = threading.Thread(target=check_drawer_open)
