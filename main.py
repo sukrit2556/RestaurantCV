@@ -13,6 +13,8 @@ if __name__ == "__main__":
     import statistics
     import logging
     import sys
+    availability_cache = [None for _ in range (len(table_points))]
+    list_total_count_cache = [0 for _ in range (len(table_points))]
 
 
 frame_count = 0
@@ -20,10 +22,8 @@ total_frame_count = 0
 frame_rate = 0
 stop_thread = False
 check_available_started = False
-list_total_count_cache = []
 list_realtime_count_cache = []
 count_person_at_table_cache = []
-availability_cache = []
 end_recording = False
 check_dimsum_started = False
 fakeCamFrame = None
@@ -34,6 +34,9 @@ id_at_table_cache = []
 
 person_in_cashier_cache = None
 drawer_observing = False
+check_employee_too_long_started = False
+check_drawer_open_started = False
+cashier_aleart_set = False
 
 
 
@@ -110,7 +113,7 @@ def calculate_real_people_total():
 
 
 def check_available():
-    global list_realtime_count_cache, stop_thread, availability_cache, check_available_started, fps, frame_rate
+    global list_realtime_count_cache, stop_thread, availability_cache, check_available_started, fps, frame_rate, list_time_start
 
     table_name = "customer_events"
     itr = 0
@@ -147,13 +150,15 @@ def check_available():
             for i, item in enumerate(table_status):
                 if item >= 5/2:   # occupied
                     availability.append("occupied")
-                    if len(availability_cache) == 0 or availability_cache[i] == "unoccupied":
+                    if availability_cache[i] == "unoccupied" or  availability_cache[i] == None:
+                        start_occupied_datetime[i] = present_datetime
                         field_list = ["tableID", "customer_IN", "created_datetime"]
                         value_list = [i+1, present_datetime, datetime.now()]
                         insert_db(table_name, field_list, value_list)
                 else:                   #unoccupied
                     availability.append("unoccupied")
-                    if len(availability_cache) != 0 and availability_cache[i] == "occupied":
+                    if availability_cache[i] == "occupied"  or  availability_cache[i] == None:
+                        start_occupied_datetime[i] = None
                         update_db(table_name, "customer_OUT", present_datetime, 
                                   ["created_datetime = (" + f"{select_db('customer_events', ['MAX(created_datetime)'], [f'tableID = {i+1}'])[0]})",
                                    f"tableID = {i+1}"])
@@ -446,7 +451,7 @@ def recognize_employee_face(shared_dict, todo_queue, known_face_encodings, known
                         cropped_person_BGR = cropped_person
                         cropped_person = cv2.cvtColor(cropped_person, cv2.COLOR_BGR2RGB)
 
-                        cv2.imwrite("fuckthis.jpg", cropped_person_BGR)
+                        #cv2.imwrite("person_found.jpg", cropped_person_BGR)
                         #find face location and encoding
                         face_location = face_recognition.face_locations(cropped_person, model='hog')
 
@@ -493,7 +498,7 @@ def recognize_employee_face(shared_dict, todo_queue, known_face_encodings, known
 
 def check_drawer_open():
     print('\033[93m' + f'check_drawer_open [started]' + '\033[0m')
-    global stop_thread
+    global stop_thread, check_drawer_open_started, cashier_aleart_set
     model = YOLO(config['drawer_model_path'])
     status_record = False
     open_found = 0
@@ -501,6 +506,7 @@ def check_drawer_open():
     status_before_is_open = False
     status_now_is_open = False
     cashier_record = None
+    check_drawer_open_started = True
 
     #coordination for detecting
     y_min, y_max = drawer_detect_points[0][0][1], drawer_detect_points[0][2][1]
@@ -569,6 +575,8 @@ def check_drawer_open():
             person_in_cashier_now = person_in_cashier_cache #id
             #Case 1: if drawer were detected open
             if status_before_is_open == False and status_now_is_open == True:
+
+                cashier_aleart_set = True
 
                 #fetch data from person at cashier
                 while shared_dict_update_inprogress.is_set():
@@ -648,7 +656,7 @@ def check_drawer_open():
 
             #if the drawer is detected closed
             elif status_before_is_open == True and status_now_is_open == False:
-                
+                cashier_aleart_set = False
                 status_record = not status_record
                 employeeID = None
                 cashier_record.release()
@@ -660,12 +668,15 @@ def check_drawer_open():
             stop_subprocess.set()
     if cashier_record is not None and cashier_record.isOpened():
         cashier_record.release()
+    check_drawer_open_started = False
     print('\033[93m' + f'check_drawer_open stopped' + '\033[0m')
 
 def check_employee_too_long():
     print('\033[93m' + f'check_employee_too_long started' + '\033[0m')
-    global count_person_at_table_cache, stop_thread, availability_cache, check_available_started, fps, frame_rate
+    
+    global count_person_at_table_cache, stop_thread, availability_cache, check_available_started, fps, frame_rate, check_employee_too_long_started
 
+    check_employee_too_long_started = True
     itr = 0
     frame_cache = []
     record_object = [None for _ in range (len(employee_detect_area_points))]
@@ -809,6 +820,13 @@ def print_shared_key():
         time.sleep(0.1)
         print("\n")
     print('\033[93m' + f'printed_shared_key stopped' + '\033[0m')
+def sharpen_image(image):
+    kernel = np.array([[0, -1, 0],
+                       [-1, 5, -1],
+                       [0, -1, 0]])
+    return cv2.filter2D(image, -1, kernel)
+def adjust_brightness_contrast(image, alpha=1.0, beta=0):
+    return cv2.convertScaleAbs(image, alpha=alpha, beta=beta)
 
 ####################### THREADING PROCESS {END} #######################
 ####################### THREADING PROCESS {END} #######################
@@ -822,6 +840,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
     found_in_cashier_count = 0
     drawer_thread  = None
     person_in_cashier = None
+    brightness_increase = 50
     #delete incomplete data before start program
     i = "0000-00-00 00:00:00"
     condition_list = [f"customer_OUT = '{i}'"]
@@ -891,7 +910,12 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
 
             present_datetime = datetime.now()
 
+        
 
+        # Add the brightness increase value to each pixel, clip the values to stay within [0, 255]
+        #frame = adjust_brightness_contrast(frame, alpha=1.2, beta=50)
+        #frame = sharpen_image(frame)
+        #frame = cv2.add(frame, np.ones(frame.shape, dtype=np.uint8) * brightness_increase)
         frame_obj = frame_attr(frame, present_datetime)
         frame_data = frame_obj.frame
         frame_time = frame_obj.date_time
@@ -904,7 +928,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
         ### Process the frame skipped ###
         if total_frame_count == 1 or (total_frame_count) % frame_skip == 0:
             if not ret or stop_subprocess.is_set():
-                print("Can't receive frame (stream end?). Exiting ...")
+                print('\033[92m' + "Can't receive frame (stream end?). Exiting ..." + '\033[0m')
                 stop_thread = True
                 end_recording = True
                 stop_subprocess.set()
@@ -983,13 +1007,13 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
                         
                         for pt1, pt2 in local_dict[id].all_edge():
                             cv2.line(frame_data, pt1, pt2, 
-                                     person_color[int(0 if local_dict[id].person_type == "unknown" else (1 if local_dict[id].person_type == "customer" else 2))], thickness=4, lineType=cv2.LINE_AA)
+                                     person_color[int(0 if local_dict[id].person_type == "unknown" else (1 if local_dict[id].person_type == "customer" else 2))], thickness=2, lineType=cv2.LINE_AA)
                         cv2.rectangle(
                             frame_data,
                             (int(bb[0]), int(bb[1])),
                             (int(bb[2]), int(bb[3])),
                             person_color[int(0 if local_dict[id].person_type == "unknown" else (1 if local_dict[id].person_type == "customer" else 2))],
-                            3,
+                            2,
                         )
                         cv2.rectangle(frame_data, (int(bb[0]), int(bb[1])), (int(bb[2]), int(bb[1]+30)), 
                                       person_color[int(0 if local_dict[id].person_type == "unknown" else (1 if local_dict[id].person_type == "customer" else 2))], -1) 
@@ -1041,14 +1065,17 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
             
 
             ### draw table area ###
-            draw_table_point(frame_data, availability_cache)
-            draw_from_points(frame_data, table_crop_points, (255, 0, 0))
+            draw_table_point_no_border(frame_data, availability_cache, present_datetime, list_total_count_cache)
+            if check_drawer_open_started and not cashier_aleart_set:
+                draw_from_points(frame_data, cashier_area_points, (0, 255, 255))
+            elif check_drawer_open_started and cashier_aleart_set:
+                draw_from_points(frame_data, cashier_area_points, (0, 0, 255))
+            """draw_from_points(frame_data, table_crop_points, (255, 0, 0))
             draw_from_points(frame_data, employee_record_area_point, (255, 0, 255))
             #draw_from_points(frame_data, plotted_points_recording, (0, 255, 255))
             draw_from_points(frame_data, drawer_detect_points, (0, 255, 255))
-            draw_from_points(frame_data, cashier_area_points, (0, 0, 255))
             draw_from_points(frame_data, cashier_area_record, (0, 255, 0))
-            draw_from_points(frame_data, employee_detect_area_points, (255, 255, 0))
+            draw_from_points(frame_data, employee_detect_area_points, (255, 255, 0))"""
             
 
             

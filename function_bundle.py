@@ -20,7 +20,6 @@ count_person_at_table = []
 realtime_dimsum_found = []
 to_check = []
 fps = 0
-stop_dimsum_thread = [False for _ in range (0,6)]
 blank_frame_cache = None
 human_dict = {}
 
@@ -143,6 +142,9 @@ for key, value in config["table_coordinate"].items():
 
 # Convert lists to numpy arrays
 table_points = np.array(table_points, dtype=np.int32)
+
+stop_dimsum_thread = [False for _ in range (len(table_points))]
+start_occupied_datetime = [None for _ in range (len(table_points))]
 
 
 # Access the points from the config dictionary
@@ -267,25 +269,12 @@ save_preview = config['save_preview']
 
 
 
-def color_selector():
-    with open("utils/coco.txt", "r") as my_file:
-        data = my_file.read()
-        class_list = data.split("\n")
 
-    detection_colors = []
-    for _ in range(len(class_list)):
-        r = random.randint(0, 255)
-        g = random.randint(0, 255)
-        b = random.randint(0, 255)
-        detection_colors.append((b, g, r))
-
-    return detection_colors, class_list
-
-#### Initialize the color randomizer for detected box ####
-detection_colors, class_list = color_selector()
-
-def draw_table_point(frame, availability_cache, list_point_all_table = table_points):
+def draw_table_point_dev_info(frame, availability_cache, now_datetime, list_total_count_cache, list_point_all_table = table_points):
     ## draw and put text for each table
+    text_color = (255, 0, 0)  # white
+    outline_color = (255, 255, 255) # black
+    font_color = (0, 0, 255)
     for table_no, pts in enumerate(list_point_all_table):
         cv2.polylines(frame, [pts], isClosed=True, color=(0, 255, 0), thickness=2)
 
@@ -297,44 +286,189 @@ def draw_table_point(frame, availability_cache, list_point_all_table = table_poi
         leftmost_point = pts[leftmost_index]
         ##put text on each table
         x_coord = leftmost_point[0]
-        y_coord = leftmost_point[1]
+        y_coord = leftmost_point[1] + 20
         font = cv2.FONT_HERSHEY_PLAIN
+        
         cv2.putText(frame, 
                     "Table " + str(table_no+1),
                     (x_coord,y_coord),
                     font,       #font name
+                    2,          #font scale
+                    font_color,  #font color
+                    2,          #font thickness
+                    cv2.LINE_AA
+        )
+        cv2.putText(frame, 
+                    "persons: " + str(list_total_count_cache[table_no]),
+                    (x_coord,y_coord+20),
+                    font,       #font name
                     1.5,          #font scale
-                    (0,0,255),  #font color
+                    font_color,  #font color
                     2,          #font thickness
                     cv2.LINE_AA
         )
         cv2.putText(frame, 
                     "persons: " + str(list_realtime_count[table_no]),
-                    (x_coord,y_coord+20),
+                    (x_coord,y_coord+40),
                     font,       #font name
                     1.5,          #font scale
-                    (0,0,255),  #font color
+                    font_color,  #font color
                     2,          #font thickness
                     cv2.LINE_AA
         )
         cv2.putText(frame, 
                     "RT_status: " + str("Unoccupied" if list_realtime_count[table_no] == 0 else "occupied"),
-                    (x_coord,y_coord+40),
+                    (x_coord,y_coord+60),
                     font,       #font name
                     1.5,          #font scale
-                    (0,0,255),  #font color
+                    font_color,  #font color
                     2,          #font thickness
                     cv2.LINE_AA
         )
         cv2.putText(frame, 
-                    "Real_status: " + (str(availability_cache[table_no]) if len(availability_cache) > 0 else ""),
-                    (x_coord,y_coord+60),
+                    "Status: " + (str(availability_cache[table_no]) if len(availability_cache) > 0 else ""),
+                    (x_coord,y_coord+80),
                     font,       #font name
                     1.5,          #font scale
-                    (0,0,255),  #font color
+                    font_color,  #font color
                     2,          #font thickness
                     cv2.LINE_AA
         )
+        if availability_cache[table_no] == "occupied":
+            time_spent = now_datetime - start_occupied_datetime[table_no]
+            minutes, seconds = divmod(time_spent.total_seconds(), 60)
+            cv2.putText(frame, 
+                        f"Time spent: {int(minutes)}:{int(seconds):02d}",
+                        (x_coord,y_coord+100),
+                        font,       #font name
+                        1.5,          #font scale
+                        font_color,  #font color
+                        2,          #font thickness
+                        cv2.LINE_AA
+            )
+
+    return frame
+
+def draw_table_point_no_border(frame, availability_cache, now_datetime, list_total_count_cache, list_point_all_table = table_points):
+    ## draw and put text for each table
+    font_color = (255, 0, 0)
+    for table_no, pts in enumerate(list_point_all_table):
+        cv2.polylines(frame, [pts], isClosed=True, color=(0, 255, 0), thickness=2)
+
+        #find leftest point
+        # Find the index of the point with the minimum x-coordinate (using axis=0 for row-wise comparison)
+        leftmost_index = np.argmin(pts[:, 0])
+
+        # Extract the leftmost point
+        leftmost_point = pts[leftmost_index]
+        ##put text on each table
+        x_coord = leftmost_point[0]
+        y_coord = leftmost_point[1] + 20
+        font = cv2.FONT_HERSHEY_PLAIN
+        
+        cv2.putText(frame, 
+                    "Table " + str(table_no+1),
+                    (x_coord,y_coord),
+                    font,       #font name
+                    2,          #font scale
+                    font_color,  #font color
+                    2,          #font thickness
+                    cv2.LINE_AA
+        )
+        cv2.putText(frame, 
+                    "persons: " + str(list_total_count_cache[table_no]),
+                    (x_coord,y_coord+20),
+                    font,       #font name
+                    1.5,          #font scale
+                    font_color,  #font color
+                    2,          #font thickness
+                    cv2.LINE_AA
+        )
+        cv2.putText(frame, 
+                    "Status: " + (str(availability_cache[table_no]) if len(availability_cache) > 0 else ""),
+                    (x_coord,y_coord+40),
+                    font,       #font name
+                    1.5,          #font scale
+                    font_color,  #font color
+                    2,          #font thickness
+                    cv2.LINE_AA
+        )
+        if availability_cache[table_no] == "occupied":
+            time_spent = now_datetime - start_occupied_datetime[table_no]
+            minutes, seconds = divmod(time_spent.total_seconds(), 60)
+            cv2.putText(frame, 
+                        f"Time spent: {int(minutes)}:{int(seconds):02d}",
+                        (x_coord,y_coord+60),
+                        font,       #font name
+                        1.5,          #font scale
+                        font_color,  #font color
+                        2,          #font thickness
+                        cv2.LINE_AA
+            )
+
+    return frame
+
+def draw_table_point(frame, availability_cache, now_datetime, list_total_count_cache, list_point_all_table = table_points):
+    ## draw and put text for each table
+    text_color = (255, 0, 0)  # white
+    outline_color = (255, 255, 255) # black
+    font_color = (255, 0, 0)
+    for table_no, pts in enumerate(list_point_all_table):
+        cv2.polylines(frame, [pts], isClosed=True, color=(0, 255, 0), thickness=2)
+
+        #find leftest point
+        # Find the index of the point with the minimum x-coordinate (using axis=0 for row-wise comparison)
+        leftmost_index = np.argmin(pts[:, 0])
+
+        # Extract the leftmost point
+        leftmost_point = pts[leftmost_index]
+        ##put text on each table
+        x_coord = leftmost_point[0]
+        y_coord = leftmost_point[1] + 20
+        font = cv2.FONT_HERSHEY_PLAIN
+        
+        text = "Table " + str(table_no+1)
+        for dx in [-1, 1]:
+            for dy in [-1, 1]:
+                if dx != 0 or dy != 0:  # Skip the center position
+                    cv2.putText(frame, text,
+                                 (x_coord + dx, y_coord + dy), cv2.FONT_HERSHEY_PLAIN,
+                                   1.5, outline_color, 2, cv2.LINE_AA)
+        cv2.putText(frame, text, 
+                    (x_coord,y_coord), font, 1.5, text_color, 2, cv2.LINE_AA)
+        
+        text = "persons: " + str(list_total_count_cache[table_no])
+        for dx in [-1, 1]:
+            for dy in [-1, 1]:
+                if dx != 0 or dy != 0:  # Skip the center position
+                    cv2.putText(frame, text,
+                                 (x_coord + dx, y_coord + dy +20), cv2.FONT_HERSHEY_PLAIN,
+                                   1.5, outline_color, 2, cv2.LINE_AA)
+        cv2.putText(frame, text, 
+                    (x_coord,y_coord+20), font, 1.5, text_color, 2, cv2.LINE_AA)
+        
+        text = "Status: " + (str(availability_cache[table_no]) if len(availability_cache) > 0 else "")
+        for dx in [-1, 1]:
+            for dy in [-1, 1]:
+                if dx != 0 or dy != 0:  # Skip the center position
+                    cv2.putText(frame, text,
+                                 (x_coord + dx, y_coord + dy + 40), cv2.FONT_HERSHEY_PLAIN,
+                                   1.5, outline_color, 2, cv2.LINE_AA)
+        cv2.putText(frame, text, 
+                    (x_coord,y_coord+40), font, 1.5, text_color, 2, cv2.LINE_AA)
+        
+        if availability_cache[table_no] == "occupied":
+            time_spent = now_datetime - start_occupied_datetime[table_no]
+            minutes, seconds = divmod(time_spent.total_seconds(), 60)
+            text = f"Time spent: {int(minutes)}:{int(seconds):02d}"
+            for dx in [-1, 1]:
+                for dy in [-1, 1]:
+                    if dx != 0 or dy != 0:  # Skip the center position
+                        cv2.putText(frame, text,
+                                    (x_coord + dx, y_coord + dy +60), cv2.FONT_HERSHEY_PLAIN,
+                                    1.5, outline_color, 2, cv2.LINE_AA)
+            cv2.putText(frame, text, 
+                        (x_coord,y_coord+60), font, 1.5, text_color, 2, cv2.LINE_AA)
 
     return frame
 

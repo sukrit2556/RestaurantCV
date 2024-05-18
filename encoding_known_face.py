@@ -23,19 +23,22 @@ for filename in os.listdir(directory):
         image = face_recognition.load_image_file(filepath)
         image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         face_location = face_recognition.face_locations(image_rgb, model='hog')
-        face_encoding = face_recognition.face_encodings(image)[0]
-        print(face_location, end="")
+        print(face_location)
+        _, employee_data = select_db("employee", ["employee_ID","employee_name"], [f"employee_image LIKE '%{filename}%'"])
+        print(f"employee name: {employee_data[0][1]} | employee_ID: {employee_data[0][0]}", end="")
         
         if face_location:
+            face_encoding = face_recognition.face_encodings(image)[0]
             print('\033[92m' + '  [pass]' + '\033[0m')
         else:
-            print('\033[91m' + '  [fail]' + '\033[0m')
+            print('\033[91m' + f'  [fail] image of {employee_data[0][1]} have no face detected. Please re-upload new image contained face.' + '\033[0m')
+            exit()
         known_face_encodings.append(face_encoding)
 
-        _, employee_data = select_db("employee", ["employee_ID","employee_name"], [f"employee_image LIKE '%{filename}%'"])
+        
         known_face_names.append(employee_data[0][1])
         employee_face_id.append(employee_data[0][0])
-        print(f"employee name: {employee_data[0][1]} | employee_ID: {employee_data[0][0]}")
+        
         ###cv2.imshow(employee_data[0][1], test_img)
         ###cv2.waitKey(0)
 ###cv2.destroyAllWindows()
