@@ -158,7 +158,6 @@ def check_available():
                 else:                   #unoccupied
                     availability.append("unoccupied")
                     if availability_cache[i] == "occupied"  or  availability_cache[i] == None:
-                        start_occupied_datetime[i] = None
                         update_db(table_name, "customer_OUT", present_datetime, 
                                   ["created_datetime = (" + f"{select_db('customer_events', ['MAX(created_datetime)'], [f'tableID = {i+1}'])[0]})",
                                    f"tableID = {i+1}"])
@@ -201,7 +200,7 @@ def combine_frame():
     # Define codec and create VideoWriter object
     out = cv2.VideoWriter('result_video/processing_record.mp4', 
                             cv2.VideoWriter_fourcc(*'H264'), 
-                            30, size) 
+                            7, size) 
 
     while not stop_thread and not end_recording:
         # Iterate over each video queue to check for frames
@@ -906,15 +905,17 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
             cv2.imshow('fakevid', frame)"""
         elif not simulate and source_platform == "live_frame":   #live frame
             ret, frame = cap.read() 
-            frame = cv2.resize(frame, (1920, 1080))
+            #frame = cv2.resize(frame, (1920, 1080))
 
             present_datetime = datetime.now()
+
+            print("fucking live frame")
 
         
 
         # Add the brightness increase value to each pixel, clip the values to stay within [0, 255]
         #frame = adjust_brightness_contrast(frame, alpha=1.2, beta=50)
-        #frame = sharpen_image(frame)
+        frame = sharpen_image(frame)
         #frame = cv2.add(frame, np.ones(frame.shape, dtype=np.uint8) * brightness_increase)
         frame_obj = frame_attr(frame, present_datetime)
         frame_data = frame_obj.frame
@@ -928,6 +929,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
         ### Process the frame skipped ###
         if total_frame_count == 1 or (total_frame_count) % frame_skip == 0:
             if not ret or stop_subprocess.is_set():
+                print(f"ret = {ret} and stop_subprocess.is_set() = {stop_subprocess.is_set()}")
                 print('\033[92m' + "Can't receive frame (stream end?). Exiting ..." + '\033[0m')
                 stop_thread = True
                 end_recording = True
@@ -968,78 +970,77 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
                     horizon_center = int((int(bb[2]) + int(bb[0]))/2)
                     vertical_center = int((int(bb[3]) + int(bb[1]))/2)
                     center_coordinate = (horizon_center, vertical_center)
-                    
-                    #cv2.circle(frame_data, (horizon_center, vertical_center), 10, (0,0,255), -1)
-
-                    id = int(boxes[i].id.cpu().numpy()[0])
-
-                    #if human dict don't have this id
-                    if not id in local_dict:
-                        data = person("unknown", frame_count, frame_count, 0, present_datetime, 
-                                      present_datetime, False, (int(bb[0]), int(bb[1])), (int(bb[2]), int(bb[3])))
-                        data.add_pixel(center_coordinate)
-                        local_dict[id] = data
-
-                    is_customer = count_table_people(horizon_center, vertical_center)
-                    
-                    classify_unknown_or_customer(local_dict, known_employee, id, is_customer, frame_count, present_datetime, 
-                                              (horizon_center, vertical_center),(int(bb[0]), int(bb[1])), (int(bb[2]), int(bb[3])),
-                                              frame_data)
-                    
-                    if local_dict[id].person_type != "unknown" and local_dict[id].person_type != "customer":
-                        success, is_at_table = check_employee_at_table(horizon_center, vertical_center)
-                        #print("is_at_table = ", is_at_table)
-                        if success:
-                            id_at_table[is_at_table] = id
-
-
-                    key_contain_in_frame.append(id)
-
-                    #check if at cashier
-                    is_at_cashier = check_person_at_cashier(horizon_center, vertical_center)
-                    if is_at_cashier:                  
-                        person_in_cashier = id
-                        found_in_cashier_count+= 1
-                        
-                    # Display plotting class name and confidence (only used in track mode)
                     try:
-                        id = int(boxes[i].id.cpu().numpy()[0])
-                        
-                        for pt1, pt2 in local_dict[id].all_edge():
-                            cv2.line(frame_data, pt1, pt2, 
-                                     person_color[int(0 if local_dict[id].person_type == "unknown" else (1 if local_dict[id].person_type == "customer" else 2))], thickness=2, lineType=cv2.LINE_AA)
-                        cv2.rectangle(
-                            frame_data,
-                            (int(bb[0]), int(bb[1])),
-                            (int(bb[2]), int(bb[3])),
-                            person_color[int(0 if local_dict[id].person_type == "unknown" else (1 if local_dict[id].person_type == "customer" else 2))],
-                            2,
-                        )
-                        cv2.rectangle(frame_data, (int(bb[0]), int(bb[1])), (int(bb[2]), int(bb[1]+30)), 
-                                      person_color[int(0 if local_dict[id].person_type == "unknown" else (1 if local_dict[id].person_type == "customer" else 2))], -1) 
-                        cv2.putText(
-                            frame_data,
-                            str(local_dict[id].person_type) + " " + str(id),
-                            (int(bb[0]), int(bb[1]) + 25),
-                            font,
-                            1,
-                            (255, 255, 255),
-                            1,
-                        )
-                        cv2.putText(
-                            frame_data,
-                            str(local_dict[id].fixed) + "{:.2f}".format(local_dict[id].probToBeCustomer),
-                            (int(bb[0]), int(bb[1]) + 50),
-                            font,
-                            1,
-                            (255, 255, 255),
-                            1,
-                        )
-                        
+                        if boxes[i].id is not None:
+                            #cv2.circle(frame_data, (horizon_center, vertical_center), 10, (0,0,255), -1)
+                            id = int(boxes[i].id.cpu().numpy()[0])
+                            #if human dict don't have this id
+                            if not id in local_dict:
+                                data = person("unknown", frame_count, frame_count, 0, present_datetime, 
+                                            present_datetime, False, (int(bb[0]), int(bb[1])), (int(bb[2]), int(bb[3])))
+                                data.add_pixel(center_coordinate)
+                                local_dict[id] = data
+
+                            is_customer = count_table_people(horizon_center, vertical_center)
+                            
+                            classify_unknown_or_customer(local_dict, known_employee, id, is_customer, frame_count, present_datetime, 
+                                                    (horizon_center, vertical_center),(int(bb[0]), int(bb[1])), (int(bb[2]), int(bb[3])),
+                                                    frame_data)
+                            
+                            if local_dict[id].person_type != "unknown" and local_dict[id].person_type != "customer":
+                                success, is_at_table = check_employee_at_table(horizon_center, vertical_center)
+                                #print("is_at_table = ", is_at_table)
+                                if success:
+                                    id_at_table[is_at_table] = id
+
+
+                            key_contain_in_frame.append(id)
+
+                            #check if at cashier
+                            is_at_cashier = check_person_at_cashier(horizon_center, vertical_center)
+                            if is_at_cashier:                  
+                                person_in_cashier = id
+                                found_in_cashier_count+= 1
+                                
+                            # Display plotting class name and confidence (only used in track mode)
+                            
+                            id = int(boxes[i].id.cpu().numpy()[0])
+                            
+                            for pt1, pt2 in local_dict[id].all_edge():
+                                cv2.line(frame_data, pt1, pt2, 
+                                            person_color[int(0 if local_dict[id].person_type == "unknown" else (1 if local_dict[id].person_type == "customer" else 2))], thickness=2, lineType=cv2.LINE_AA)
+                            cv2.rectangle(
+                                frame_data,
+                                (int(bb[0]), int(bb[1])),
+                                (int(bb[2]), int(bb[3])),
+                                person_color[int(0 if local_dict[id].person_type == "unknown" else (1 if local_dict[id].person_type == "customer" else 2))],
+                                2,
+                            )
+                            cv2.rectangle(frame_data, (int(bb[0]), int(bb[1])), (int(bb[2]), int(bb[1]+30)), 
+                                            person_color[int(0 if local_dict[id].person_type == "unknown" else (1 if local_dict[id].person_type == "customer" else 2))], -1) 
+                            cv2.putText(
+                                frame_data,
+                                str(local_dict[id].person_type) + " " + str(id),
+                                (int(bb[0]), int(bb[1]) + 25),
+                                font,
+                                1,
+                                (255, 255, 255),
+                                1,
+                            )
+                            cv2.putText(
+                                frame_data,
+                                str(local_dict[id].fixed) + "{:.2f}".format(local_dict[id].probToBeCustomer),
+                                (int(bb[0]), int(bb[1]) + 50),
+                                font,
+                                1,
+                                (255, 255, 255),
+                                1,
+                            )
                     except Exception as e:
                         print("error: ", e)
                         traceback.print_exc()
                         stop_thread = True
+                    
             #remove key that don't have now
             if len(key_contain_in_frame) > 0:
                 update_local_dict(local_dict, key_contain_in_frame, frame_count)
@@ -1070,12 +1071,12 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
                 draw_from_points(frame_data, cashier_area_points, (0, 255, 255))
             elif check_drawer_open_started and cashier_aleart_set:
                 draw_from_points(frame_data, cashier_area_points, (0, 0, 255))
-            """draw_from_points(frame_data, table_crop_points, (255, 0, 0))
+            draw_from_points(frame_data, table_crop_points, (255, 0, 0))
             draw_from_points(frame_data, employee_record_area_point, (255, 0, 255))
-            #draw_from_points(frame_data, plotted_points_recording, (0, 255, 255))
+            draw_from_points(frame_data, plotted_points_recording, (0, 255, 255))
             draw_from_points(frame_data, drawer_detect_points, (0, 255, 255))
             draw_from_points(frame_data, cashier_area_record, (0, 255, 0))
-            draw_from_points(frame_data, employee_detect_area_points, (255, 255, 0))"""
+            draw_from_points(frame_data, employee_detect_area_points, (255, 255, 0))
             
 
             

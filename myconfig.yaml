@@ -1,4 +1,5 @@
 datetime: 2023-03-12T09:57:09 #format: 2023-03-12T09:57:38 or now
+#datetime: 2023-12-5T10:59:19 #format: 2023-03-12T09:57:38 or now
 
 main_model_path: "weights/yolov8l.pt"
 dimsum_model_path: "weights/205trainset_400epoch_model_S.pt"
@@ -6,20 +7,20 @@ drawer_model_path: "weights/drawer_open_300Epoch_model_S.pt"
 save_customer_path_parent: "/djangoAPP"
 save_customer_path_child: "/mock_media/customer"
 
-save_preview: False
-save_preview_path: "result_video/processing_record2.mp4"
+save_preview: False #save as video
+save_preview_path: "result_video/ver_1.mp4" #unusable
 
-source: video_frame
-frame_skip: 1
+source: video_frame #source
+frame_skip: 1 #number of frame skipping
 
 video_frame:
   source: video
-  simulate: True
-  url: "inference/videos/restaurant_test_human_inout_cashier_2round_with_drawer.mp4"
+  simulate: True # False = read 100% , True = sampling
+  url: "inference/videos/ver_1.mp4"
 
 live_frame:
   source: live_frame
-  url: 0
+  url: "http://10.0.1.1:8080/"
 
 save_vid_period: 1
 
@@ -40,23 +41,23 @@ colors:
 
 table_coordinate:
   pts1:
-    - [90, 245]
-    - [318, 145]
-    - [427, 294]
+    - [83, 217]
+    - [334, 124]
+    - [476, 272]
     - [148, 430]
     - [113, 318]
   pts2:
     - [148, 436]
-    - [449, 302]
-    - [660, 566]
+    - [491, 283]
+    - [711, 530]
     - [279, 745]
     - [207, 575]
   pts3:
-    - [472, 0]
-    - [709, 0]
-    - [709, 60]
-    - [550, 115]
-    - [472, 73]
+    - [442, 0]
+    - [710, 0]
+    - [710, 60]
+    - [520, 115]
+    - [442, 73]
   pts4:
     - [710, 0]
     - [1040, 0]
@@ -64,17 +65,17 @@ table_coordinate:
     - [876, 163]
     - [710, 60]
   pts5:
-    - [986, 136]
-    - [1267, 17]
-    - [1578, 184]
-    - [1370, 370]
-    - [1140, 228]
+    - [956, 136]
+    - [1237, 17]
+    - [1548, 184]
+    - [1340, 370]
+    - [1110, 228]
   pts6:
-    - [1685, 220]
+    - [1629, 195]
     - [1920, 321]
     - [1920, 530]
     - [1739, 440]
-    - [1596, 355]
+    - [1531, 318]
 
 table_crop_coord:
   pts1:
@@ -88,10 +89,10 @@ table_crop_coord:
     - [683, 633]
     - [220, 633]
   pts3:
-    - [492, 0]
-    - [700, 0]
-    - [700, 67]
-    - [492, 67]
+    - [442, 0]
+    - [730, 0]
+    - [730, 67]
+    - [442, 67]
   pts4:
     - [708, 0]
     - [1012, 0]
@@ -116,7 +117,7 @@ table_coord_for_recording:
     - [134, 286]
     - [718, 721]
   pts3:
-    - [463, 0]
+    - [433, 0]
     - [759, 189]
   pts4:
     - [683, 0]

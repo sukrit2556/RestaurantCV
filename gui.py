@@ -7,11 +7,12 @@ class App:
         self.root = root
         self.root.title("GUI for main.py")
         
-        self.start_button = tk.Button(self.root, text="Start", command=self.start_main)
-        self.start_button.pack(pady=10)
+        self.start_button = tk.Button(self.root, text="Start", command=self.start_main, width=20, height=3)
+        self.start_button.pack(pady=50)
+        self.start_button.pack(padx=100)
         
-        self.stop_button = tk.Button(self.root, text="Stop", command=self.stop_main)
-        self.stop_button.pack(pady=10)
+        self.stop_button = tk.Button(self.root, text="Stop", command=self.stop_main, width=20, height=3)
+        self.stop_button.pack(pady=50)
         
         self.process = None
         
