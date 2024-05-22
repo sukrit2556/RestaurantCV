@@ -1,5 +1,8 @@
-datetime: 2023-03-12T09:57:09 #format: 2023-03-12T09:57:38 or now
-#datetime: 2023-12-5T10:59:19 #format: 2023-03-12T09:57:38 or now
+#datetime: 2023-03-12T09:57:09 #format: 2023-03-12T09:57:38 or now
+datetime: 2023-12-5T10:59:20 #format: 2023-03-12T09:57:38 or now
+source: video_frame #source
+frame_skip: 1 #number of frame skipping
+save_preview: True #save as video
 
 main_model_path: "weights/yolov8l.pt"
 dimsum_model_path: "weights/205trainset_400epoch_model_S.pt"
@@ -7,16 +10,12 @@ drawer_model_path: "weights/drawer_open_300Epoch_model_S.pt"
 save_customer_path_parent: "/djangoAPP"
 save_customer_path_child: "/mock_media/customer"
 
-save_preview: False #save as video
 save_preview_path: "result_video/ver_1.mp4" #unusable
-
-source: video_frame #source
-frame_skip: 1 #number of frame skipping
 
 video_frame:
   source: video
   simulate: True # False = read 100% , True = sampling
-  url: "inference/videos/ver_1.mp4"
+  url: "inference/videos/2hr_restaurant.mp4"
 
 live_frame:
   source: live_frame
@@ -47,8 +46,8 @@ table_coordinate:
     - [148, 430]
     - [113, 318]
   pts2:
-    - [148, 436]
-    - [491, 283]
+    - [146, 431]
+    - [479, 272]
     - [711, 530]
     - [279, 745]
     - [207, 575]

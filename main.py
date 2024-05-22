@@ -450,7 +450,7 @@ def recognize_employee_face(shared_dict, todo_queue, known_face_encodings, known
                         cropped_person_BGR = cropped_person
                         cropped_person = cv2.cvtColor(cropped_person, cv2.COLOR_BGR2RGB)
 
-                        #cv2.imwrite("person_found.jpg", cropped_person_BGR)
+                        #cv2.imwrite(f"result_video/result_face/person_found.jpg", cropped_person_BGR)
                         #find face location and encoding
                         face_location = face_recognition.face_locations(cropped_person, model='hog')
 
@@ -458,15 +458,22 @@ def recognize_employee_face(shared_dict, todo_queue, known_face_encodings, known
 
                         #face comparing
                         for itr, face_encoding in enumerate(face_encodings):
-
-                            """i += 1
+                            
+                            #for dev only
+                            location_face = face_location[itr]
+                            face_y_min = location_face[0]
+                            face_x_max = location_face[1]
+                            face_y_max = location_face[2]
+                            face_x_min = location_face[3]
+                            cropped_face = cropped_person_BGR[face_y_min:face_y_max, face_x_min:face_x_max]
+                            i += 1
                             media_directory = os.path.join(os.getcwd(), "employee_face_result")
                             new_folder_path = os.path.normpath(media_directory)
                             os.makedirs(new_folder_path, exist_ok=True)
-                            filename = f"{i}.jpg"
+                            filename = f"face_{i}.jpg"
                             path_to_file = os.path.join(new_folder_path, filename)
                             print(path_to_file)
-                            cv2.imwrite(path_to_file, cropped_person_BGR)"""
+                            #cv2.imwrite(path_to_file, cropped_person_BGR)
 
                             # Compare face encoding with known faces
                             matches = face_recognition.compare_faces(known_face_encodings, face_encoding, tolerance = 0.4)
@@ -740,7 +747,7 @@ def check_employee_too_long():
                         if record_object[table_no] is None:
 
                             #find out the employeeID
-                            if person_type_cache[table_no] == None:
+                            if person_type_cache[table_no] == None and id_at_table_cache[table_no] != None:
                                 id_at_table = id_at_table_cache[table_no]
                                 person_type = shared_dict[id_at_table].person_type
                                 person_type_cache[table_no] = person_type
@@ -773,6 +780,7 @@ def check_employee_too_long():
                             insert_db("suspicious_events", field_list, value_list, verbose=True)
                             _, sus_id = select_db('suspicious_events', ['max(sus_ID)'], [f"sus_type = 1"])
                             sus_id_list[table_no] = sus_id[0][0]
+                            print('\033[91m' + f'!!!Found too prolonged employee [started]' + '\033[0m')
                             
 
                         elif record_object[table_no] is not None:
@@ -784,6 +792,7 @@ def check_employee_too_long():
                                 #cv2.imwrite(f"fukkkkelif{fuck}.jpg", frame)
                                 cv2.putText(frame,str(timeframe.strftime('%Y-%m-%d %H:%M:%S')),(10,40),cv2.FONT_HERSHEY_PLAIN,2,(0,0,255),2,cv2.LINE_AA)
                                 record_object[table_no].write(frame)
+                            print('\033[91m' + f'!!!Found too prolonged employee [continue]' + '\033[0m')
                         
                     else:                   #unoccupied
                         employee_occupied[table_no] = "unoccupied"
@@ -796,6 +805,7 @@ def check_employee_too_long():
                             record_object[table_no].release()
                             record_object[table_no] = None
                             person_type_cache[table_no] = None
+                            print('\033[91m' + f'!!!Found too prolonged employee [stopped]' + '\033[0m')
 
             employee_occupied_cache = employee_occupied.copy()
 
@@ -915,7 +925,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
 
         # Add the brightness increase value to each pixel, clip the values to stay within [0, 255]
         #frame = adjust_brightness_contrast(frame, alpha=1.2, beta=50)
-        frame = sharpen_image(frame)
+        #frame = sharpen_image(frame)
         #frame = cv2.add(frame, np.ones(frame.shape, dtype=np.uint8) * brightness_increase)
         frame_obj = frame_attr(frame, present_datetime)
         frame_data = frame_obj.frame
@@ -954,7 +964,10 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
                 
                 while shared_dict_update_inprogress.is_set():
                     time.sleep(0.1)
-                local_dict = dict(shared_dict)
+                try:
+                    local_dict = dict(shared_dict)
+                except:
+                    continue
                 
                 for i in range(len(detect_params[0])):
 
@@ -988,10 +1001,10 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
                                                     frame_data)
                             
                             if local_dict[id].person_type != "unknown" and local_dict[id].person_type != "customer":
-                                success, is_at_table = check_employee_at_table(horizon_center, vertical_center)
+                                is_at_table, at_table = check_employee_at_table(horizon_center, vertical_center)
                                 #print("is_at_table = ", is_at_table)
-                                if success:
-                                    id_at_table[is_at_table] = id
+                                if is_at_table:
+                                    id_at_table[at_table] = id
 
 
                             key_contain_in_frame.append(id)
