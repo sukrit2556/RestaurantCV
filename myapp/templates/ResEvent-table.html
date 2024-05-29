@@ -219,12 +219,13 @@
                           <div class="modal-content" style="width: 700px;">
                             <div class="modal-header">
                               <h5 class="modal-title" id="exampleModalLabel">Event number {{ event.sus_id }}</h5>
-                              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                              <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                aria-label="Close"></button>
                             </div>
                             <div class="modal-body">
 
                               {% if event.sus_video %}
-                              <video width="400" controls style="width: 650px; height: 350px;">
+                              <video width="650" height="350" controls>
                                 <source src="{{ event.sus_video }}" type="video/mp4">
                                 Your browser does not support HTML video.
                               </video>
@@ -251,36 +252,36 @@
     </div>
   </div>
 
-    <script>
-      function myFunction() {
-        var input, filter, table, tr, td, i, j, txtValue;
-        input = document.getElementById("myInput");
-        filter = input.value.toUpperCase();
-        table = document.getElementById("myTable");
-        tr = table.getElementsByTagName("tr");
-        for (i = 0; i < tr.length; i++) {
-          var found = false;
-          // Loop through all columns except the last one (Action/Resolve column)
-          for (j = 0; j < tr[i].getElementsByTagName("td").length - 1; j++) {
-            td = tr[i].getElementsByTagName("td")[j];
-            if (td) {
-              txtValue = td.textContent || td.innerText;
-              // If any column contains the search query, set found to true
-              if (txtValue.toUpperCase().indexOf(filter) > -1) {
-                found = true;
-                break; // Break the loop if any column matches
-              }
+  <script>
+    function myFunction() {
+      var input, filter, table, tr, td, i, j, txtValue;
+      input = document.getElementById("myInput");
+      filter = input.value.toUpperCase();
+      table = document.getElementById("myTable");
+      tr = table.getElementsByTagName("tr");
+      for (i = 0; i < tr.length; i++) {
+        var found = false;
+        // Loop through all columns except the last one (Action/Resolve column)
+        for (j = 0; j < tr[i].getElementsByTagName("td").length - 1; j++) {
+          td = tr[i].getElementsByTagName("td")[j];
+          if (td) {
+            txtValue = td.textContent || td.innerText;
+            // If any column contains the search query, set found to true
+            if (txtValue.toUpperCase().indexOf(filter) > -1) {
+              found = true;
+              break; // Break the loop if any column matches
             }
           }
-          // Show or hide the row based on whether any column contains the search query
-          if (found) {
-            tr[i].style.display = "";
-          } else {
-            tr[i].style.display = "none";
-          }
+        }
+        // Show or hide the row based on whether any column contains the search query
+        if (found) {
+          tr[i].style.display = "";
+        } else {
+          tr[i].style.display = "none";
         }
       }
-    </script>
+    }
+  </script>
 
 </body>
 
