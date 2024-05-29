@@ -14,9 +14,10 @@ zoomed_restaurant3 = "test_data/zoomed_restaurant3.jpg"
 zoomed_restaurant4 = "test_data/zoomed_restaurant4.jpg"
 zoomed_restaurant5 = "test_data/zoomed_restaurant5.jpg"
 zoomed_restaurant6 = "test_data/zoomed_restaurant6.jpg"
+seven_zoom = "test_data\seven-open_zoomed.jpg"
 
-model = YOLO("models/205trainset_400epoch_model_S.pt")
-source_img = [dimssum2,zoomed_restaurant,zoomed_restaurant1,zoomed_restaurant2,zoomed_restaurant3,zoomed_restaurant4,zoomed_restaurant5,zoomed_restaurant6]
-
+model = YOLO("models/100_drawer_1_class_modelS_250Epoch.pt")
+#source_img = [dimssum2,zoomed_restaurant,zoomed_restaurant1,zoomed_restaurant2,zoomed_restaurant3,zoomed_restaurant4,zoomed_restaurant5,zoomed_restaurant6]
+source_img = [seven_zoom]
 #source_img = [alpaca, dimssum, giraffe, maneki, restaurants, dimssum2, zoomed_restaurant,zoomed_restaurant1,zoomed_restaurant2,zoomed_restaurant3,zoomed_restaurant4,zoomed_restaurant5,zoomed_restaurant6]
-results = model(source=source_img, conf=0.4, show=False, save=True)
+results = model(source=source_img, show=False, save=True)

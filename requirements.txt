@@ -11,3 +11,5 @@ torchaudio
 ipython
 imantics
 fiftyone
+pafy
+youtube-dl
