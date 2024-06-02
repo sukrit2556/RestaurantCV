@@ -1,7 +1,7 @@
 #datetime: 2023-03-12T09:57:09 #format: 2023-03-12T09:57:38 or now
 datetime: 2023-12-5T10:59:20 #format: 2023-03-12T09:57:38 or now
 source: video_frame #source
-frame_skip: 1 #number of frame skipping
+frame_skip: 3 #number of frame skipping
 save_preview: True #save as video
 
 main_model_path: "weights/yolov8l.pt"
@@ -14,7 +14,7 @@ save_preview_path: "result_video/ver_1.mp4" #unusable
 
 video_frame:
   source: video
-  simulate: True # False = read 100% , True = sampling
+  simulate: False # False = read 100% , True = sampling
   url: "inference/videos/2hr_restaurant.mp4"
 
 live_frame:

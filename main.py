@@ -200,7 +200,7 @@ def combine_frame():
     # Define codec and create VideoWriter object
     out = cv2.VideoWriter('result_video/processing_record.mp4', 
                             cv2.VideoWriter_fourcc(*'H264'), 
-                            7, size) 
+                            10, size) 
 
     while not stop_thread and not end_recording:
         # Iterate over each video queue to check for frames
@@ -951,7 +951,7 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
             blank_frame_cache = blank_frame
 
             ### Predict on image ###
-            detect_params = model.track(source=[frame_data], conf=0.4, show=False, save=False, persist=True, classes=[0], tracker="bytetrack.yaml", verbose=False)
+            detect_params = model.track(source=[frame_data], show=False, save=False, persist=True, classes=[0], tracker="bytetrack.yaml", verbose=False)
 
             # Convert tensor array to numpy
             DP = detect_params[0].cpu().numpy()
@@ -1084,11 +1084,11 @@ def main(source_platform, simulate, source_url, frame_skip, date_time):
                 draw_from_points(frame_data, cashier_area_points, (0, 255, 255))
             elif check_drawer_open_started and cashier_aleart_set:
                 draw_from_points(frame_data, cashier_area_points, (0, 0, 255))
-            draw_from_points(frame_data, table_crop_points, (255, 0, 0))
+            """draw_from_points(frame_data, table_crop_points, (255, 0, 0))
             draw_from_points(frame_data, employee_record_area_point, (255, 0, 255))
             draw_from_points(frame_data, plotted_points_recording, (0, 255, 255))
             draw_from_points(frame_data, drawer_detect_points, (0, 255, 255))
-            draw_from_points(frame_data, cashier_area_record, (0, 255, 0))
+            draw_from_points(frame_data, cashier_area_record, (0, 255, 0))"""
             draw_from_points(frame_data, employee_detect_area_points, (255, 255, 0))
             
 
