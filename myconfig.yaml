@@ -1,8 +1,8 @@
 #datetime: 2023-03-12T09:57:09 #format: 2023-03-12T09:57:38 or now
 datetime: 2023-12-5T10:59:20 #format: 2023-03-12T09:57:38 or now
 source: video_frame #source
-frame_skip: 3 #number of frame skipping
-save_preview: True #save as video
+frame_skip: 10 #number of frame skipping
+save_preview: False #save as video
 
 main_model_path: "weights/yolov8l.pt"
 dimsum_model_path: "weights/205trainset_400epoch_model_S.pt"
@@ -52,11 +52,11 @@ table_coordinate:
     - [279, 745]
     - [207, 575]
   pts3:
-    - [442, 0]
+    - [380, 0]
     - [710, 0]
     - [710, 60]
-    - [520, 115]
-    - [442, 73]
+    - [480, 155]
+    - [380, 73]
   pts4:
     - [710, 0]
     - [1040, 0]

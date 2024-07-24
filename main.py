@@ -413,6 +413,7 @@ def recognize_employee_face(shared_dict, todo_queue, known_face_encodings, known
     import face_recognition
     import time
     i = 0
+    j = 0
 
     try:
         while not stop_subprocess.is_set():
@@ -450,7 +451,10 @@ def recognize_employee_face(shared_dict, todo_queue, known_face_encodings, known
                         cropped_person_BGR = cropped_person
                         cropped_person = cv2.cvtColor(cropped_person, cv2.COLOR_BGR2RGB)
 
-                        #cv2.imwrite(f"result_video/result_face/person_found.jpg", cropped_person_BGR)
+                        media_directory = os.path.join(os.getcwd(), "general_face_result")
+                        new_folder_path = os.path.normpath(media_directory)
+                        os.makedirs(new_folder_path, exist_ok=True)
+                        #cv2.imwrite(path_to_file, cropped_person_BGR)
                         #find face location and encoding
                         face_location = face_recognition.face_locations(cropped_person, model='hog')
 
@@ -466,14 +470,7 @@ def recognize_employee_face(shared_dict, todo_queue, known_face_encodings, known
                             face_y_max = location_face[2]
                             face_x_min = location_face[3]
                             cropped_face = cropped_person_BGR[face_y_min:face_y_max, face_x_min:face_x_max]
-                            i += 1
-                            media_directory = os.path.join(os.getcwd(), "employee_face_result")
-                            new_folder_path = os.path.normpath(media_directory)
-                            os.makedirs(new_folder_path, exist_ok=True)
-                            filename = f"face_{i}.jpg"
-                            path_to_file = os.path.join(new_folder_path, filename)
-                            print(path_to_file)
-                            #cv2.imwrite(path_to_file, cropped_person_BGR)
+                            
 
                             # Compare face encoding with known faces
                             matches = face_recognition.compare_faces(known_face_encodings, face_encoding, tolerance = 0.4)
@@ -484,6 +481,14 @@ def recognize_employee_face(shared_dict, todo_queue, known_face_encodings, known
                                 first_match_index = matches.index(True)
                                 name = known_face_names[first_match_index]
 
+                                i += 1
+                                media_directory = os.path.join(os.getcwd(), "employee_face_result")
+                                new_folder_path = os.path.normpath(media_directory)
+                                os.makedirs(new_folder_path, exist_ok=True)
+                                filename = f"{name}_face_{i}.jpg"
+                                path_to_file = os.path.join(new_folder_path, filename)
+                                cv2.imwrite(path_to_file, cropped_person_BGR)
+
                                 #update shared dict part >>>
                                 if key in shared_dict:
                                     
@@ -492,6 +497,12 @@ def recognize_employee_face(shared_dict, todo_queue, known_face_encodings, known
                                     print(f"found {name} at id {key}")
                                     known_employee[key] = name
                                     break
+                            elif True not in matches:
+                                j = j+1
+                                filename = f"Unknownface_{j}.jpg"
+                                path_to_file = os.path.join(new_folder_path, filename)
+                                cv2.imwrite(path_to_file, cropped_person_BGR)
+
             keys_to_delete = set(known_employee.keys()) - set(shared_dict.keys())
             for key in keys_to_delete:
                 del known_employee[key]

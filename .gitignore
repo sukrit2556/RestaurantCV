@@ -1,4 +1,4 @@
-__pycache__
+__pycache__/
 datasets/
 inference/
 result_video/
@@ -13,3 +13,4 @@ output.csv
 test.py
 .*
 employee_face_result/
+general_face_result/
